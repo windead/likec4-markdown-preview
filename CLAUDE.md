@@ -36,20 +36,27 @@ npm run package               # build + notices + vsce package
 - 注意：`markdown.preview.refresh` 是**强制整页重载**（P1 结论），只改 `.c4` 时不存在走 morphdom 的路径；为此宿主 light DOM 内有服务端生成的静态 SVG 快照（`src/staticSvg.ts`），预览入口（`preview/index.ts`）先按保存视口定位快照、再懒加载应用（`preview/app.tsx`），图在 shadow 内隐藏初始化、就绪后才替换 `<slot>` 显示的快照。细节见 `docs/design.md` §3.3。
 - `src/markdownIt.ts`：同步 markdown-it fence 规则，只接管 info string 以 `likec4-view` 开头的块，其余交回原规则（须能与其他改写 fence 的插件串联）。**规则内只读缓存**，不做 I/O 或布局；缓存未就绪输出 `state: "loading"` 占位，就绪后触发刷新。
 - `src/projects.ts`：扫描各工作区根中的 `likec4.config.json` / `.likec4rc` / `likec4.config.{js,ts}`；从 Markdown 所在目录向上找最近项目（同 mkdocs-likec4 `_find_nearest_project`），兜底为默认项目（无配置、根目录有 `.c4`）。
-- `src/modelService.ts`：每个 LikeC4 工作区根一个实例，惰性创建。不继承 `LikeC4`，而是用 `@likec4/language-server` 的公开模块组装服务后 `new LikeC4(services)`，未保存文本走 Langium `TextDocuments.set/delete`；磁盘变化靠 `fromWorkspace(root, {watch:true})`，未保存编辑经防抖后写入 Langium 文档并 `DocumentBuilder.update`，文档未保存关闭时回退磁盘内容。`onModelUpdate` 后**只重算已被渲染引用的视图**，比较布局哈希，有变化才调用一次 `markdown.preview.refresh`。同项目重算串行，丢弃排队中的旧请求。模型出错时保留上次成功布局，状态 `stale`。
+- `src/modelService.ts`：每个 LikeC4 工作区根一个实例，惰性创建。不继承 `LikeC4`，而是用 `@likec4/language-server` 的公开模块组装服务后 `new LikeC4(services)`，磁盘变化靠 `WithFileSystem(true)`（chokidar），未保存编辑经防抖后 `TextDocuments.set` + `DocumentBuilder.update`，文档关闭/保存时 `delete` 回退磁盘内容。`onModelUpdate` 后**只重算已被渲染引用的项目**（`layoutedModel`），以规范化 JSON（键排序，`$data` 键序不稳定）的哈希判断变化。重算串行合并。模型有错误（以 `hasErrors` 类诊断判定，Langium 容错仍会产出模型）时保留上次成功结果，状态 `stale`。
+- `src/refresh.ts` + `src/extension.ts`：`markdown.preview.refresh` 会重载**所有**预览，故仅当受影响项目被仍打开的文档引用、且有 Markdown 预览打开时才调用（5 ms 合并）。
 
 **预览 webview（`preview/` → `preview.js`，经 `markdown.previewScripts` 注入）**
-- 在 `DOMContentLoaded` 与每次 `vscode.markdown.updateContent` 后扫描 `.likec4-view` 宿主。
-- 新宿主：`attachShadow` → 注入 `@likec4/diagram` 样式 → `createRoot`；已有宿主：`hash` 未变则跳过，否则 `root.render(新 props)`（不重挂载）；消失的宿主 `unmount`。
-- 视口（缩放/平移）按宿主 id 存内存；`color-scheme=auto` 用 `MutationObserver` 监听 `body` 的 `vscode-light/dark/high-contrast` 类。
+- `preview/index.ts`（轻量入口）→ `preview/app.tsx`（React + `LikeC4ModelProvider` + `LikeC4View`，懒 `require`）；`preview/hosts.ts` 管宿主生命周期（可单测，不依赖 React），`preview/viewport.ts` 管视口持久化（`sessionStorage`，键为文档 URI + 宿主 id）与快照定位。
+- 已有宿主：hash/选项/配色未变则跳过，否则 `root.render(新 props)`（不重挂载）；消失的宿主 `unmount`；屏幕外宿主延迟挂载。
+- 图始终 `fitView=true` 初始化（`fitView=false` 时 LikeC4 平移/缩放失效），在 `onInitialized` 中用 `diagram.send({type:'xyflow.setViewport'})` 恢复视口；宿主上用**捕获阶段**监听交互（React Flow 阻止冒泡）。滚轮滚动页面，Ctrl/⌘+滚轮缩放。
+- 打包需 `define` `import.meta.env.DEV/MODE`（`@likec4/diagram` 含 Vite 风格引用，否则二次渲染崩溃）。
 
 **宿主元素契约（无闪烁更新的核心，改动前务必理解）**
 
 ```html
-<div class="likec4-view" id="likec4-<project>-<viewId>-<n>" data-likec4-opts='{...仅选项...}'>
-  <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","view":{…},"message":"…"}</script>
+<div class="likec4-model" id="likec4-model-<project>-<rootTag>" hidden><script type="application/json">{"hash","trimmed","model":{…}}</script></div>
+<div class="likec4-view" id="likec4-<project>-<rootTag>-<viewId>-<n>" data-likec4-opts='{...仅选项...}'>
+  <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","message":"…"}</script>
+  [<div class="likec4-notice">…</div>] <svg class="likec4-static" data-bounds="…">…快照…</svg>
 </div>
 ```
+
+- 模型每文档每项目一份，id 放在外层 `<div>`：VS Code 的 `domEval` 重建 `<script>` 时只保留 `type` 等属性。
+- 就绪标记在 shadow root 内（`.likec4-root[data-ready]`）：宿主自身的属性会被 morphdom 删掉。`ShadowRoot.querySelector` 中不能用 `:scope`。
 
 - VS Code 预览用 morphdom 合并 DOM（`areNodesEqual` 只比 light DOM、忽略 `data-line`）。`id` 必须稳定（`<n>` 为该视图在文档中的出现序号），宿主属性**只放选项**，数据只出现在 `<script>` 文本里——这样 morphdom 只改文本节点，宿主元素与其 shadow root、React root 得以保留。
 - 内联 JSON 前把 `<` `>` `&` U+2028 U+2029 转义为 `\uXXXX`。
