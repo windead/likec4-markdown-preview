@@ -1,0 +1,9 @@
+**
+!package.json
+!dist/extension.js
+!dist/preview.js
+!media/**
+!README.md
+!CHANGELOG.md
+!LICENSE
+!THIRD_PARTY_NOTICES

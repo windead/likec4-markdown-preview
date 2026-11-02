@@ -5,10 +5,10 @@
  */
 import { LikeC4Model } from '@likec4/core/model'
 import { LikeC4ModelProvider, LikeC4View, pickViewBounds } from '@likec4/diagram'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
-import { HostManager, markReady, readJson } from './hosts'
+import { HostManager, markReady, readJson, unmarkReady } from './hosts'
 import { clearOtherDocuments, documentKey, loadViewport, makeViewportSaver, isViewportUsable, type SavedViewport } from './viewport'
 import type { HostData, HostOptions, ModelData } from '../src/types'
 
@@ -108,6 +108,10 @@ interface HostProps {
 
 function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps & { model: ModelEntry }) {
   const [saved] = useState<SavedViewport | null>(() => loadViewport(docKey, hostId))
+  // a diagram mounted after an error/loading state: keep the snapshot until it is initialized
+  useLayoutEffect(() => {
+    if (host.querySelector(':scope > svg.likec4-static')) unmarkReady(host)
+  }, [host])
   const cleanup = useRef<(() => void) | null>(null)
   useEffect(() => () => cleanup.current?.(), [])
   const browser = opts.browser && !data.trimmed
@@ -189,7 +193,8 @@ function HostView(props: HostProps) {
   const { data, model, opts, host } = props
   useEffect(() => {
     // never keep the snapshot forever if the diagram does not initialize
-    const t = setTimeout(() => markReady(host), 3000)
+    // with a snapshot to show, wait longer (cold start of large models); without one, fail fast
+    const t = setTimeout(() => markReady(host), host.querySelector(':scope > svg.likec4-static') ? 15000 : 3000)
     return () => clearTimeout(t)
   }, [host])
   if (data.state === 'loading') return <><Ready host={host} /><Notice kind="info">Loading LikeC4 view…</Notice></>

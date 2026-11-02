@@ -10,7 +10,7 @@ const test = (name, fn) => tests.push({ name, fn })
 
 function hosts(html) {
   const out = []
-  const re = /<div class="likec4-view" id="([^"]+)"(?: data-likec4-opts="([^"]*)")?><script type="application\/json">([\s\S]*?)<\/script>(?:<svg class="likec4-static"[\s\S]*?<\/svg>)?<\/div>/g
+  const re = /<div class="likec4-view" id="([^"]+)"(?: data-likec4-opts="([^"]*)")?><script type="application\/json">([\s\S]*?)<\/script>(?:<div class="likec4-notice[^"]*">[\s\S]*?<\/div>)*(?:<svg class="likec4-static"[\s\S]*?<\/svg>)?<\/div>/g
   let m
   while ((m = re.exec(html))) {
     const opts = m[2] ? JSON.parse(m[2].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')) : null

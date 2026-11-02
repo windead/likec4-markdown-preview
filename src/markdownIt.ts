@@ -207,7 +207,10 @@ function renderFence(tokens: Token[], idx: number, env: Env, deps: RenderDeps): 
     ...(snap.message && snap.state === 'stale' ? { message: snap.message } : {}),
     ...(payload.trimmed ? { trimmed: true } : {}),
   }
-  return out + hostHtml(hostId, hostOpts, data, staticSnapshot(snap, viewId, hostOpts, hostId))
+  // same notices as the interactive diagram shows, so the handover does not shift the content
+  const notices = (data.state === 'stale' ? `<div class="likec4-notice likec4-notice-warning">Showing the last valid version. ${escapeHtml(data.message ?? '')}</div>` : '')
+    + (data.trimmed && opts.browser ? '<div class="likec4-notice likec4-notice-info">The LikeC4 model is too large to embed completely; navigation is disabled.</div>' : '')
+  return out + hostHtml(hostId, hostOpts, data, notices + staticSnapshot(snap, viewId, hostOpts, hostId))
 }
 
 /** Installs the fence rule; non-likec4 fences go to the previous rule untouched. */

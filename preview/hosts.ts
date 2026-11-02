@@ -49,6 +49,11 @@ export function markReady(host: Element) {
   host.shadowRoot?.querySelector('.likec4-root')?.setAttribute('data-ready', '')
 }
 
+/** Shows the snapshot again until the (newly mounted) diagram reports ready. */
+export function unmarkReady(host: Element) {
+  host.shadowRoot?.querySelector('.likec4-root')?.removeAttribute('data-ready')
+}
+
 export function isReady(host: Element): boolean {
   return !!host.shadowRoot?.querySelector('.likec4-root[data-ready]')
 }

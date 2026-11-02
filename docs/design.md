@@ -76,21 +76,23 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 - 宿主 JSON 的 `hash` = 模型哈希 + 视图状态，`view` 不重复内联。
 - JSON 内联前将 `<`、`>`、`&`、U+2028、U+2029 转义为 `\uXXXX`。
 - **静态快照**：`ok`/`stale` 宿主的 light DOM 含一份由扩展宿主按布局数据生成的 SVG（节点、复合节点、连线、标签，颜色取 LikeC4 默认主题，缓存键为视图哈希 + 形态 + 最大高度）。快照内的元素 id 带宿主 id 前缀，保证页面内唯一。`dynamic-variant=sequence` 不生成快照。快照只是占位，不追求与交互图逐像素一致；颜色与 LikeC4 一致，亮/暗主题下相同。
+- stale 与模型被裁剪的提示条也在服务端输出到快照之前（`.likec4-notice`），与交互图中的提示一致，交接时内容不下移。
 - **体积上限**：转义后模型的 UTF-8 字节数超过 `maxModelBytes`（缺省 2 MiB）时，把模型的 `views` 裁剪为本文档引用的视图，宿主强制 `browser=false` 并显示提示；文档中全部宿主为 `browser=false` 时也只内联裁剪后的模型。
 
 ### 3.3 预览端
 
 - **入口与懒加载**：`preview.js` 的入口很小。在 `DOMContentLoaded` 时，它先把每个静态快照的 `viewBox` 设为交互图将使用的视口：有保存的视口且仍能看到视图时用保存值，否则用 LikeC4 的初始 fit（16px 留白，缩放取 [0.05, 1]，偏移取整）。然后在 `load` 之后（最多 250 ms）才 `require` React/LikeC4 应用。webview 在新文档 `load` 时（或 200 ms 兜底）切换 frame，因此重载时先看到的就是新内容的快照。
 - 应用启动后扫描一次，之后每次 `vscode.markdown.updateContent` 再扫描一次。首次同步渲染（`flushSync`）只挂载当前可见的宿主，视口一屏范围内的宿主在下一个任务挂载，更远的由 `IntersectionObserver` 在接近时挂载；未挂载的宿主继续显示快照。已挂载的宿主不回收。
-- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。3 秒内未就绪也会强制切换。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
+- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。未就绪的兜底：有快照时 15 秒、无快照时（sequence 形态）3 秒后强制切换。宿主从错误/加载状态转为显示图时清除就绪标记，重新等待初始化。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
 - 已有宿主：宿主 JSON、模型哈希、选项、配色都未变则跳过；否则 `root.render(新 props)`，组件不重挂载。
 - 宿主从文档消失：`unmount` 并清理。
 - 状态：`loading` 显示占位；`error` 显示错误块（不渲染图）；`stale` 渲染上次成功的模型并叠加提示条。
 - 主题：`color-scheme=auto` 读 `document.body` 的 `vscode-light`/`vscode-dark`/`vscode-high-contrast` 类，`MutationObserver` 监听变化；`light`/`dark` 固定。
-- 尺寸：图框宽 `min(100%, 视图宽 + 32px)`，按布局边界（`pickViewBounds(view, variant)`）保持宽高比，`max-height` 为 `maxHeight`，`min-height` 为 160px，水平居中。快照使用同一公式（服务端内联样式），`LikeC4View` 关闭自身的 `keepAspectRatio`，填满图框。图内可缩放、平移。
+- 尺寸：图框宽 `min(100%, 视图宽 + 32px)`，按布局边界（`pickViewBounds(view, variant)`）保持宽高比，`max-height` 为 `maxHeight`，`min-height` 为 160px，水平居中。快照使用同一公式（服务端内联样式），`LikeC4View` 关闭自身的 `keepAspectRatio`，填满图框。
+- 交互：滚轮滚动 Markdown 页面（不被图捕获，与 mkdocs-likec4 的使用习惯一致）；Ctrl/⌘ + 滚轮或触控板捏合缩放；拖拽平移；`browser=true` 时点击元素打开图内浏览浮层。实现为 `reactFlowProps={zoomOnScroll:false, panOnScroll:false, preventScrolling:false}`。
 - 视口：以「文档 URI + 宿主 id」为键存 `sessionStorage`，在宿主上以捕获阶段监听交互事件（React Flow 会阻止冒泡），限流写入，并记录图框尺寸。只保留当前文档的键。图始终以 `fitView=true` 初始化（`fitView=false` 时 LikeC4 的平移和缩放不工作），保存的视口若仍能看到视图，就在 `onInitialized` 中通过 `diagram.send({type:'xyflow.setViewport'})` 恢复，并发送 `xyflow.viewportMoved(manually)`，避免之后容器尺寸变化时再次自动 fit。morphdom 路径下组件不重挂载，视口自然保持。
 - 打包：IIFE；`define` `process.env.NODE_ENV`、`import.meta.env.DEV`、`import.meta.env.MODE`。无 `eval`、不插入 `<script>`、无网络请求。
-- 测试辅助：`sessionStorage['likec4-trace']='1'` 时，入口在加载后约 4 秒内逐帧记录可见宿主显示的内容（快照、图、空白）及其视口。
+- 测试辅助：`sessionStorage['likec4-trace']='1'` 时，入口在加载后约 4 秒内逐帧记录可见宿主显示的内容（快照、图、空白）及其视口。记录从 `DOMContentLoaded` 开始，此前（webview 已切换但内容尚未追加）的帧无法在页内观测。
 
 ### 3.4 更新链路与已知限制
 
@@ -124,7 +126,7 @@ Output Channel “LikeC4 Markdown Preview” 记录：`[projects]` 项目发现�
 - 只读；不注册 LSP 客户端，不提供诊断与补全，与官方 LikeC4 扩展互不干扰。
 - 清单声明 `capabilities.untrustedWorkspaces: { supported: true }`（不执行工作区代码）。
 - 不包含：定位源码（`command:` URI 在预览中不放行，待后续评估 `vscode://` URI 方案）、Notebook、第三方预览、导出 HTML/PDF。
-- `engines.vscode`：取 1.63 与“桌面扩展宿主内置 Node 满足所有打包依赖 `engines.node`（`@likec4/language-server@1.60.0` 要求 ≥22.22.3）”的最早版本中的较大者，以扩展宿主实测 `process.versions.node` 为准。
+- `engines.vscode`：`^1.123.0`。取 1.63（morphdom 预览）与“桌面扩展宿主内置 Node 满足所有打包依赖 `engines.node`（`@likec4/language-server@1.60.0` 要求 ≥22.22.3）”的最早版本中的较大者：1.122 为 Electron 39.8.8 / Node 22.22.1（不满足），1.123 为 Electron 42.3.0 / Node 24.15.0。已在 VS Code 1.123.0 与 1.144.0 上运行集成测试。
 
 ## 6. 验收口径调整（相对任务书 7.2）
 
