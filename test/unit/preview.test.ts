@@ -141,3 +141,32 @@ describe('preview host lifecycle under VS Code morphdom updates', () => {
     expect(JSON.parse(model.querySelector('script')!.textContent!).hash).toBe('h1')
   })
 })
+
+describe('deferred mounting', () => {
+  it('hosts rejected by shouldMount keep their light DOM and are mounted later', () => {
+    const s = snap('h1')
+    const render = renderer(() => s)
+    document.body.innerHTML = '<div class="markdown-body"></div>'
+    initialLoad(document, render(DOC()))
+    let allow = false
+    const mounted: Element[] = []
+    const m = new HostManager<{ hash: string }>(document, {
+      createRoot: c => {
+        mounted.push(c)
+        return { render: () => {}, unmount: () => {} }
+      },
+      model: () => ({ hash: 'h1' }),
+      view: () => null,
+      shouldMount: host => allow || host === document.querySelector('.likec4-view'),
+    })
+    m.scan()
+    const hosts = [...document.querySelectorAll('.likec4-view')]
+    expect(mounted).toHaveLength(1)
+    expect(hosts[1]!.shadowRoot).toBeNull()
+    expect(m.deferred.size).toBe(2)
+    allow = true
+    m.scan()
+    expect(mounted).toHaveLength(3)
+    expect(m.deferred.size).toBe(0)
+  })
+})

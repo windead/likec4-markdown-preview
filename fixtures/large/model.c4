@@ -1,0 +1,887 @@
+specification {
+  element actor { style { shape person } }
+  element system
+  element container
+  element component
+  deploymentNode environment
+  deploymentNode node
+}
+
+model {
+  user = actor 'User' { description 'A user of the platform' }
+  sys1 = system 'System 1' {
+    description 'Generated system number 1'
+    c1 = container 'S1 Container 1' {
+      technology 'Tech 2'
+      k1 = component 'S1C1 Component 1'
+      k2 = component 'S1C1 Component 2'
+      k3 = component 'S1C1 Component 3'
+      k4 = component 'S1C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S1 Container 2' {
+      technology 'Tech 3'
+      k1 = component 'S1C2 Component 1'
+      k2 = component 'S1C2 Component 2'
+      k3 = component 'S1C2 Component 3'
+      k4 = component 'S1C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S1 Container 3' {
+      technology 'Tech 4'
+      k1 = component 'S1C3 Component 1'
+      k2 = component 'S1C3 Component 2'
+      k3 = component 'S1C3 Component 3'
+      k4 = component 'S1C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S1 Container 4' {
+      technology 'Tech 5'
+      k1 = component 'S1C4 Component 1'
+      k2 = component 'S1C4 Component 2'
+      k3 = component 'S1C4 Component 3'
+      k4 = component 'S1C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S1 Container 5' {
+      technology 'Tech 6'
+      k1 = component 'S1C5 Component 1'
+      k2 = component 'S1C5 Component 2'
+      k3 = component 'S1C5 Component 3'
+      k4 = component 'S1C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys2 = system 'System 2' {
+    description 'Generated system number 2'
+    c1 = container 'S2 Container 1' {
+      technology 'Tech 3'
+      k1 = component 'S2C1 Component 1'
+      k2 = component 'S2C1 Component 2'
+      k3 = component 'S2C1 Component 3'
+      k4 = component 'S2C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S2 Container 2' {
+      technology 'Tech 4'
+      k1 = component 'S2C2 Component 1'
+      k2 = component 'S2C2 Component 2'
+      k3 = component 'S2C2 Component 3'
+      k4 = component 'S2C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S2 Container 3' {
+      technology 'Tech 5'
+      k1 = component 'S2C3 Component 1'
+      k2 = component 'S2C3 Component 2'
+      k3 = component 'S2C3 Component 3'
+      k4 = component 'S2C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S2 Container 4' {
+      technology 'Tech 6'
+      k1 = component 'S2C4 Component 1'
+      k2 = component 'S2C4 Component 2'
+      k3 = component 'S2C4 Component 3'
+      k4 = component 'S2C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S2 Container 5' {
+      technology 'Tech 0'
+      k1 = component 'S2C5 Component 1'
+      k2 = component 'S2C5 Component 2'
+      k3 = component 'S2C5 Component 3'
+      k4 = component 'S2C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys3 = system 'System 3' {
+    description 'Generated system number 3'
+    c1 = container 'S3 Container 1' {
+      technology 'Tech 4'
+      k1 = component 'S3C1 Component 1'
+      k2 = component 'S3C1 Component 2'
+      k3 = component 'S3C1 Component 3'
+      k4 = component 'S3C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S3 Container 2' {
+      technology 'Tech 5'
+      k1 = component 'S3C2 Component 1'
+      k2 = component 'S3C2 Component 2'
+      k3 = component 'S3C2 Component 3'
+      k4 = component 'S3C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S3 Container 3' {
+      technology 'Tech 6'
+      k1 = component 'S3C3 Component 1'
+      k2 = component 'S3C3 Component 2'
+      k3 = component 'S3C3 Component 3'
+      k4 = component 'S3C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S3 Container 4' {
+      technology 'Tech 0'
+      k1 = component 'S3C4 Component 1'
+      k2 = component 'S3C4 Component 2'
+      k3 = component 'S3C4 Component 3'
+      k4 = component 'S3C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S3 Container 5' {
+      technology 'Tech 1'
+      k1 = component 'S3C5 Component 1'
+      k2 = component 'S3C5 Component 2'
+      k3 = component 'S3C5 Component 3'
+      k4 = component 'S3C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys4 = system 'System 4' {
+    description 'Generated system number 4'
+    c1 = container 'S4 Container 1' {
+      technology 'Tech 5'
+      k1 = component 'S4C1 Component 1'
+      k2 = component 'S4C1 Component 2'
+      k3 = component 'S4C1 Component 3'
+      k4 = component 'S4C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S4 Container 2' {
+      technology 'Tech 6'
+      k1 = component 'S4C2 Component 1'
+      k2 = component 'S4C2 Component 2'
+      k3 = component 'S4C2 Component 3'
+      k4 = component 'S4C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S4 Container 3' {
+      technology 'Tech 0'
+      k1 = component 'S4C3 Component 1'
+      k2 = component 'S4C3 Component 2'
+      k3 = component 'S4C3 Component 3'
+      k4 = component 'S4C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S4 Container 4' {
+      technology 'Tech 1'
+      k1 = component 'S4C4 Component 1'
+      k2 = component 'S4C4 Component 2'
+      k3 = component 'S4C4 Component 3'
+      k4 = component 'S4C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S4 Container 5' {
+      technology 'Tech 2'
+      k1 = component 'S4C5 Component 1'
+      k2 = component 'S4C5 Component 2'
+      k3 = component 'S4C5 Component 3'
+      k4 = component 'S4C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys5 = system 'System 5' {
+    description 'Generated system number 5'
+    c1 = container 'S5 Container 1' {
+      technology 'Tech 6'
+      k1 = component 'S5C1 Component 1'
+      k2 = component 'S5C1 Component 2'
+      k3 = component 'S5C1 Component 3'
+      k4 = component 'S5C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S5 Container 2' {
+      technology 'Tech 0'
+      k1 = component 'S5C2 Component 1'
+      k2 = component 'S5C2 Component 2'
+      k3 = component 'S5C2 Component 3'
+      k4 = component 'S5C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S5 Container 3' {
+      technology 'Tech 1'
+      k1 = component 'S5C3 Component 1'
+      k2 = component 'S5C3 Component 2'
+      k3 = component 'S5C3 Component 3'
+      k4 = component 'S5C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S5 Container 4' {
+      technology 'Tech 2'
+      k1 = component 'S5C4 Component 1'
+      k2 = component 'S5C4 Component 2'
+      k3 = component 'S5C4 Component 3'
+      k4 = component 'S5C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S5 Container 5' {
+      technology 'Tech 3'
+      k1 = component 'S5C5 Component 1'
+      k2 = component 'S5C5 Component 2'
+      k3 = component 'S5C5 Component 3'
+      k4 = component 'S5C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys6 = system 'System 6' {
+    description 'Generated system number 6'
+    c1 = container 'S6 Container 1' {
+      technology 'Tech 0'
+      k1 = component 'S6C1 Component 1'
+      k2 = component 'S6C1 Component 2'
+      k3 = component 'S6C1 Component 3'
+      k4 = component 'S6C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S6 Container 2' {
+      technology 'Tech 1'
+      k1 = component 'S6C2 Component 1'
+      k2 = component 'S6C2 Component 2'
+      k3 = component 'S6C2 Component 3'
+      k4 = component 'S6C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S6 Container 3' {
+      technology 'Tech 2'
+      k1 = component 'S6C3 Component 1'
+      k2 = component 'S6C3 Component 2'
+      k3 = component 'S6C3 Component 3'
+      k4 = component 'S6C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S6 Container 4' {
+      technology 'Tech 3'
+      k1 = component 'S6C4 Component 1'
+      k2 = component 'S6C4 Component 2'
+      k3 = component 'S6C4 Component 3'
+      k4 = component 'S6C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S6 Container 5' {
+      technology 'Tech 4'
+      k1 = component 'S6C5 Component 1'
+      k2 = component 'S6C5 Component 2'
+      k3 = component 'S6C5 Component 3'
+      k4 = component 'S6C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys7 = system 'System 7' {
+    description 'Generated system number 7'
+    c1 = container 'S7 Container 1' {
+      technology 'Tech 1'
+      k1 = component 'S7C1 Component 1'
+      k2 = component 'S7C1 Component 2'
+      k3 = component 'S7C1 Component 3'
+      k4 = component 'S7C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S7 Container 2' {
+      technology 'Tech 2'
+      k1 = component 'S7C2 Component 1'
+      k2 = component 'S7C2 Component 2'
+      k3 = component 'S7C2 Component 3'
+      k4 = component 'S7C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S7 Container 3' {
+      technology 'Tech 3'
+      k1 = component 'S7C3 Component 1'
+      k2 = component 'S7C3 Component 2'
+      k3 = component 'S7C3 Component 3'
+      k4 = component 'S7C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S7 Container 4' {
+      technology 'Tech 4'
+      k1 = component 'S7C4 Component 1'
+      k2 = component 'S7C4 Component 2'
+      k3 = component 'S7C4 Component 3'
+      k4 = component 'S7C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S7 Container 5' {
+      technology 'Tech 5'
+      k1 = component 'S7C5 Component 1'
+      k2 = component 'S7C5 Component 2'
+      k3 = component 'S7C5 Component 3'
+      k4 = component 'S7C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys8 = system 'System 8' {
+    description 'Generated system number 8'
+    c1 = container 'S8 Container 1' {
+      technology 'Tech 2'
+      k1 = component 'S8C1 Component 1'
+      k2 = component 'S8C1 Component 2'
+      k3 = component 'S8C1 Component 3'
+      k4 = component 'S8C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S8 Container 2' {
+      technology 'Tech 3'
+      k1 = component 'S8C2 Component 1'
+      k2 = component 'S8C2 Component 2'
+      k3 = component 'S8C2 Component 3'
+      k4 = component 'S8C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S8 Container 3' {
+      technology 'Tech 4'
+      k1 = component 'S8C3 Component 1'
+      k2 = component 'S8C3 Component 2'
+      k3 = component 'S8C3 Component 3'
+      k4 = component 'S8C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S8 Container 4' {
+      technology 'Tech 5'
+      k1 = component 'S8C4 Component 1'
+      k2 = component 'S8C4 Component 2'
+      k3 = component 'S8C4 Component 3'
+      k4 = component 'S8C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S8 Container 5' {
+      technology 'Tech 6'
+      k1 = component 'S8C5 Component 1'
+      k2 = component 'S8C5 Component 2'
+      k3 = component 'S8C5 Component 3'
+      k4 = component 'S8C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys9 = system 'System 9' {
+    description 'Generated system number 9'
+    c1 = container 'S9 Container 1' {
+      technology 'Tech 3'
+      k1 = component 'S9C1 Component 1'
+      k2 = component 'S9C1 Component 2'
+      k3 = component 'S9C1 Component 3'
+      k4 = component 'S9C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S9 Container 2' {
+      technology 'Tech 4'
+      k1 = component 'S9C2 Component 1'
+      k2 = component 'S9C2 Component 2'
+      k3 = component 'S9C2 Component 3'
+      k4 = component 'S9C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S9 Container 3' {
+      technology 'Tech 5'
+      k1 = component 'S9C3 Component 1'
+      k2 = component 'S9C3 Component 2'
+      k3 = component 'S9C3 Component 3'
+      k4 = component 'S9C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S9 Container 4' {
+      technology 'Tech 6'
+      k1 = component 'S9C4 Component 1'
+      k2 = component 'S9C4 Component 2'
+      k3 = component 'S9C4 Component 3'
+      k4 = component 'S9C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S9 Container 5' {
+      technology 'Tech 0'
+      k1 = component 'S9C5 Component 1'
+      k2 = component 'S9C5 Component 2'
+      k3 = component 'S9C5 Component 3'
+      k4 = component 'S9C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys10 = system 'System 10' {
+    description 'Generated system number 10'
+    c1 = container 'S10 Container 1' {
+      technology 'Tech 4'
+      k1 = component 'S10C1 Component 1'
+      k2 = component 'S10C1 Component 2'
+      k3 = component 'S10C1 Component 3'
+      k4 = component 'S10C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S10 Container 2' {
+      technology 'Tech 5'
+      k1 = component 'S10C2 Component 1'
+      k2 = component 'S10C2 Component 2'
+      k3 = component 'S10C2 Component 3'
+      k4 = component 'S10C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S10 Container 3' {
+      technology 'Tech 6'
+      k1 = component 'S10C3 Component 1'
+      k2 = component 'S10C3 Component 2'
+      k3 = component 'S10C3 Component 3'
+      k4 = component 'S10C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S10 Container 4' {
+      technology 'Tech 0'
+      k1 = component 'S10C4 Component 1'
+      k2 = component 'S10C4 Component 2'
+      k3 = component 'S10C4 Component 3'
+      k4 = component 'S10C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S10 Container 5' {
+      technology 'Tech 1'
+      k1 = component 'S10C5 Component 1'
+      k2 = component 'S10C5 Component 2'
+      k3 = component 'S10C5 Component 3'
+      k4 = component 'S10C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys11 = system 'System 11' {
+    description 'Generated system number 11'
+    c1 = container 'S11 Container 1' {
+      technology 'Tech 5'
+      k1 = component 'S11C1 Component 1'
+      k2 = component 'S11C1 Component 2'
+      k3 = component 'S11C1 Component 3'
+      k4 = component 'S11C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S11 Container 2' {
+      technology 'Tech 6'
+      k1 = component 'S11C2 Component 1'
+      k2 = component 'S11C2 Component 2'
+      k3 = component 'S11C2 Component 3'
+      k4 = component 'S11C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S11 Container 3' {
+      technology 'Tech 0'
+      k1 = component 'S11C3 Component 1'
+      k2 = component 'S11C3 Component 2'
+      k3 = component 'S11C3 Component 3'
+      k4 = component 'S11C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S11 Container 4' {
+      technology 'Tech 1'
+      k1 = component 'S11C4 Component 1'
+      k2 = component 'S11C4 Component 2'
+      k3 = component 'S11C4 Component 3'
+      k4 = component 'S11C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S11 Container 5' {
+      technology 'Tech 2'
+      k1 = component 'S11C5 Component 1'
+      k2 = component 'S11C5 Component 2'
+      k3 = component 'S11C5 Component 3'
+      k4 = component 'S11C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  sys12 = system 'System 12' {
+    description 'Generated system number 12'
+    c1 = container 'S12 Container 1' {
+      technology 'Tech 6'
+      k1 = component 'S12C1 Component 1'
+      k2 = component 'S12C1 Component 2'
+      k3 = component 'S12C1 Component 3'
+      k4 = component 'S12C1 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c2 = container 'S12 Container 2' {
+      technology 'Tech 0'
+      k1 = component 'S12C2 Component 1'
+      k2 = component 'S12C2 Component 2'
+      k3 = component 'S12C2 Component 3'
+      k4 = component 'S12C2 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c3 = container 'S12 Container 3' {
+      technology 'Tech 1'
+      k1 = component 'S12C3 Component 1'
+      k2 = component 'S12C3 Component 2'
+      k3 = component 'S12C3 Component 3'
+      k4 = component 'S12C3 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c4 = container 'S12 Container 4' {
+      technology 'Tech 2'
+      k1 = component 'S12C4 Component 1'
+      k2 = component 'S12C4 Component 2'
+      k3 = component 'S12C4 Component 3'
+      k4 = component 'S12C4 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c5 = container 'S12 Container 5' {
+      technology 'Tech 3'
+      k1 = component 'S12C5 Component 1'
+      k2 = component 'S12C5 Component 2'
+      k3 = component 'S12C5 Component 3'
+      k4 = component 'S12C5 Component 4'
+      k1 -> k2 'calls'
+      k2 -> k3 'calls'
+      k3 -> k4 'calls'
+    }
+    c1 -> c2 'uses'
+    c2 -> c3 'uses'
+    c3 -> c4 'uses'
+    c4 -> c5 'uses'
+  }
+  user -> sys1.c1 'uses'
+  sys1.c5 -> sys2.c1 'integrates'
+  sys1.c2.k2 -> sys5.c3.k1 'queries'
+  sys2.c5 -> sys3.c1 'integrates'
+  sys2.c2.k2 -> sys6.c3.k1 'queries'
+  sys3.c5 -> sys4.c1 'integrates'
+  sys3.c2.k2 -> sys7.c3.k1 'queries'
+  sys4.c5 -> sys5.c1 'integrates'
+  sys4.c2.k2 -> sys8.c3.k1 'queries'
+  sys5.c5 -> sys6.c1 'integrates'
+  sys5.c2.k2 -> sys9.c3.k1 'queries'
+  sys6.c5 -> sys7.c1 'integrates'
+  sys6.c2.k2 -> sys10.c3.k1 'queries'
+  sys7.c5 -> sys8.c1 'integrates'
+  sys7.c2.k2 -> sys11.c3.k1 'queries'
+  sys8.c5 -> sys9.c1 'integrates'
+  sys8.c2.k2 -> sys12.c3.k1 'queries'
+  sys9.c5 -> sys10.c1 'integrates'
+  sys9.c2.k2 -> sys1.c3.k1 'queries'
+  sys10.c5 -> sys11.c1 'integrates'
+  sys10.c2.k2 -> sys2.c3.k1 'queries'
+  sys11.c5 -> sys12.c1 'integrates'
+  sys11.c2.k2 -> sys3.c3.k1 'queries'
+}
+
+deployment {
+  environment prod 'Production' {
+    node n1 'Node 1' {
+      instanceOf sys1.c1
+      instanceOf sys1.c2
+      instanceOf sys1.c3
+    }
+    node n2 'Node 2' {
+      instanceOf sys2.c1
+      instanceOf sys2.c2
+      instanceOf sys2.c3
+    }
+    node n3 'Node 3' {
+      instanceOf sys3.c1
+      instanceOf sys3.c2
+      instanceOf sys3.c3
+    }
+    node n4 'Node 4' {
+      instanceOf sys4.c1
+      instanceOf sys4.c2
+      instanceOf sys4.c3
+    }
+  }
+}
+
+views {
+  view index {
+    title 'Platform Landscape'
+    include *
+  }
+  view sys1View of sys1 {
+    title 'System 1'
+    include *
+  }
+  view sys2View of sys2 {
+    title 'System 2'
+    include *
+  }
+  view sys3View of sys3 {
+    title 'System 3'
+    include *
+  }
+  view sys4View of sys4 {
+    title 'System 4'
+    include *
+  }
+  view sys5View of sys5 {
+    title 'System 5'
+    include *
+  }
+  view sys6View of sys6 {
+    title 'System 6'
+    include *
+  }
+  view sys7View of sys7 {
+    title 'System 7'
+    include *
+  }
+  view sys8View of sys8 {
+    title 'System 8'
+    include *
+  }
+  view sys9View of sys9 {
+    title 'System 9'
+    include *
+  }
+  view sys10View of sys10 {
+    title 'System 10'
+    include *
+  }
+  view sys11View of sys11 {
+    title 'System 11'
+    include *
+  }
+  view sys12View of sys12 {
+    title 'System 12'
+    include *
+  }
+  view s1c1View of sys1.c1 {
+    include *
+  }
+  view s1c2View of sys1.c2 {
+    include *
+  }
+  view s1c3View of sys1.c3 {
+    include *
+  }
+  view s1c4View of sys1.c4 {
+    include *
+  }
+  view s1c5View of sys1.c5 {
+    include *
+  }
+  view s2c1View of sys2.c1 {
+    include *
+  }
+  view s2c2View of sys2.c2 {
+    include *
+  }
+  view s2c3View of sys2.c3 {
+    include *
+  }
+  view s2c4View of sys2.c4 {
+    include *
+  }
+  view s2c5View of sys2.c5 {
+    include *
+  }
+  view s3c1View of sys3.c1 {
+    include *
+  }
+  view s3c2View of sys3.c2 {
+    include *
+  }
+  view s3c3View of sys3.c3 {
+    include *
+  }
+  view s3c4View of sys3.c4 {
+    include *
+  }
+  view s3c5View of sys3.c5 {
+    include *
+  }
+  view s4c1View of sys4.c1 {
+    include *
+  }
+  view s4c2View of sys4.c2 {
+    include *
+  }
+  view s4c3View of sys4.c3 {
+    include *
+  }
+  view s4c4View of sys4.c4 {
+    include *
+  }
+  view s4c5View of sys4.c5 {
+    include *
+  }
+  dynamic view flow1 {
+    title 'Flow 1'
+    user -> sys1.c1 'starts'
+    sys1.c1 -> sys1.c2 'step 1'
+    sys1.c2 -> sys1.c3 'step 2'
+    sys1.c3 -> sys1.c4 'step 3'
+    sys1.c4 -> sys1.c5 'step 4'
+  }
+  dynamic view flow2 {
+    title 'Flow 2'
+    user -> sys2.c1 'starts'
+    sys2.c1 -> sys2.c2 'step 1'
+    sys2.c2 -> sys2.c3 'step 2'
+    sys2.c3 -> sys2.c4 'step 3'
+    sys2.c4 -> sys2.c5 'step 4'
+  }
+  dynamic view flow3 {
+    title 'Flow 3'
+    user -> sys3.c1 'starts'
+    sys3.c1 -> sys3.c2 'step 1'
+    sys3.c2 -> sys3.c3 'step 2'
+    sys3.c3 -> sys3.c4 'step 3'
+    sys3.c4 -> sys3.c5 'step 4'
+  }
+  deployment view prodView {
+    title 'Production'
+    include prod.**
+  }
+}

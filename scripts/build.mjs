@@ -28,13 +28,14 @@ const extension = {
 
 /** @type {esbuild.BuildOptions} */
 const preview = {
-  entryPoints: ['preview/index.tsx'],
+  entryPoints: ['preview/index.ts'],
   bundle: true,
   platform: 'browser',
   format: 'iife',
   target: 'chrome120',
   outfile: 'dist/preview.js',
   jsx: 'automatic',
+  banner: { js: 'window.__likec4T0=performance.now();' },
   define: {
     'process.env.NODE_ENV': '"production"',
     'import.meta.env.DEV': 'false',

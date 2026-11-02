@@ -90,10 +90,40 @@ export function makeViewportSaver(
     clearTimeout(timer)
     timer = setTimeout(save, 250)
   }
-  const events = ['wheel', 'pointerup', 'keyup', 'dblclick', 'touchend', 'click'] as const
-  for (const e of events) host.addEventListener(e, schedule, { passive: true })
+  const events = ['wheel', 'pointerup', 'pointermove', 'keyup', 'dblclick', 'touchend', 'click'] as const
+  // capture phase: React Flow (d3-zoom) stops propagation of wheel/pointer events inside the diagram
+  for (const e of events) host.addEventListener(e, schedule, { passive: true, capture: true })
   return () => {
     clearTimeout(timer)
-    for (const e of events) host.removeEventListener(e, schedule)
+    for (const e of events) host.removeEventListener(e, schedule, { capture: true })
+  }
+}
+
+/** URI of the previewed document (from the preview's settings), used to scope saved viewports. */
+export function documentKey(): string {
+  try {
+    const raw = document.getElementById('vscode-markdown-preview-data')?.getAttribute('data-settings')
+    const source = raw ? JSON.parse(raw).source : undefined
+    return typeof source === 'string' ? source : location.pathname
+  } catch {
+    return location.pathname
+  }
+}
+
+/**
+ * Shows the static snapshots at the saved viewport (same mapping as the interactive diagram),
+ * so the switch to the interactive diagram does not move the content.
+ */
+export function applySavedViewportsToSnapshots(docKey: string) {
+  for (const host of Array.from(document.querySelectorAll('.likec4-view'))) {
+    const svg = host.querySelector(':scope > svg.likec4-static')
+    if (!svg || host.shadowRoot) continue
+    const v = loadViewport(docKey, host.id)
+    if (!v) continue
+    const r = svg.getBoundingClientRect()
+    const w = r.width || v.w
+    const h = r.height || v.h
+    if (!(w > 0 && h > 0)) continue
+    svg.setAttribute('viewBox', `${-v.x / v.zoom} ${-v.y / v.zoom} ${w / v.zoom} ${h / v.zoom}`)
   }
 }

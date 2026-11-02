@@ -53,7 +53,7 @@ describe('ModelService', () => {
     expect([...s.viewIds].sort()).toEqual(['checkout', 'index', 'prodDeployment', 'shopContainers'])
     expect(s.modelJson).not.toMatch(/[<>&]/)
     expect(changes).toEqual([['shop']])
-    expect(svc.projectIds().sort()).toEqual(['billing', 'shop'])
+    expect(svc.projectIds().sort()).toEqual(['billing', 'large', 'shop'])
   })
 
   it('only recomputes referenced projects', async () => {

@@ -22,6 +22,11 @@ export interface HostManagerDeps<M extends { hash: string }> {
   view(input: HostInput<M>): unknown
   /** Extra key component that forces re-render when it changes (e.g. color scheme). */
   extraKey?(input: HostInput<M>): string
+  /**
+   * Whether a host that is not mounted yet should be mounted now (e.g. only near the viewport).
+   * Hosts that are skipped keep showing their light-DOM fallback.
+   */
+  shouldMount?(host: Element): boolean
 }
 
 interface Entry {
@@ -41,6 +46,8 @@ export function readJson<T>(el: Element | null): T | null {
 
 export class HostManager<M extends { hash: string }> {
   readonly entries = new Map<Element, Entry>()
+  /** Hosts waiting to be mounted (not near the viewport yet). */
+  readonly deferred = new Set<Element>()
   /** Number of renders performed (diagnostics/tests). */
   renders = 0
 
@@ -62,6 +69,11 @@ export class HostManager<M extends { hash: string }> {
       const key = `${data.hash}|${model?.hash ?? ''}|${optsRaw ?? ''}|${this.deps.extraKey?.(input) ?? ''}`
 
       let entry = this.entries.get(host)
+      if (!entry && this.deps.shouldMount && !this.deps.shouldMount(host)) {
+        this.deferred.add(host)
+        continue
+      }
+      this.deferred.delete(host)
       if (!entry) {
         const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
         const container = this.doc.createElement('div')
@@ -74,6 +86,7 @@ export class HostManager<M extends { hash: string }> {
       this.renders++
       entry.root.render(this.deps.view(input))
     }
+    for (const host of this.deferred) if (!host.isConnected) this.deferred.delete(host)
     for (const [host, entry] of this.entries) {
       if (!host.isConnected) {
         entry.root.unmount()

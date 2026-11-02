@@ -6,9 +6,10 @@
 import { LikeC4Model } from '@likec4/core/model'
 import { LikeC4ModelProvider, LikeC4View, pickViewBounds } from '@likec4/diagram'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { HostManager, readJson } from './hosts'
-import { clearOtherDocuments, loadViewport, makeViewportSaver, isViewportUsable, type SavedViewport } from './viewport'
+import { clearOtherDocuments, documentKey, loadViewport, makeViewportSaver, isViewportUsable, type SavedViewport } from './viewport'
 import type { HostData, HostOptions, ModelData } from '../src/types'
 
 type Scheme = 'light' | 'dark'
@@ -20,20 +21,20 @@ interface ModelEntry {
 }
 
 const models = new Map<string, ModelEntry>()
+/** Diagnostics for tests: viewport restore decisions. */
+const diag = ((window as any).__likec4 ??= { log: [] as string[], marks: {} as Record<string, number> })
+const debugLog: string[] = diag.log
+const mark = (name: string) => {
+  diag.marks[name] ??= Math.round(performance.now())
+}
+mark('appInit')
+const debug = (m: string) => {
+  if (debugLog.length < 200) debugLog.push(m)
+}
 
 function vscodeScheme(): Scheme {
   const c = document.body.classList
   return c.contains('vscode-dark') || c.contains('vscode-high-contrast') && !c.contains('vscode-high-contrast-light') ? 'dark' : 'light'
-}
-
-function documentKey(): string {
-  try {
-    const raw = document.getElementById('vscode-markdown-preview-data')?.getAttribute('data-settings')
-    const source = raw ? JSON.parse(raw).source : undefined
-    return typeof source === 'string' ? source : location.pathname
-  } catch {
-    return location.pathname
-  }
 }
 
 function modelFor(id: string): ModelEntry | null {
@@ -67,6 +68,14 @@ const box: CSSProperties = {
   margin: '0 0 6px 0',
 }
 
+/** Current viewport, read from the rendered React Flow transform inside the nested shadow roots. */
+function readViewport(host: Element): { x: number; y: number; zoom: number } | null {
+  const inner = host.shadowRoot?.querySelector('.likec4-view')?.shadowRoot
+  const el = inner?.querySelector<HTMLElement>('.react-flow__viewport')
+  const m = el?.style.transform.match(/translate\(([-\d.e]+)px,\s*([-\d.e]+)px\)\s*scale\(([-\d.e]+)\)/)
+  return m ? { x: Number(m[1]), y: Number(m[2]), zoom: Number(m[3]) } : null
+}
+
 function Notice({ kind, children }: { kind: 'error' | 'warning' | 'info'; children: React.ReactNode }) {
   const color = kind === 'error'
     ? 'var(--vscode-editorError-foreground, #f14c4c)'
@@ -98,14 +107,26 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
   const browser = opts.browser && !data.trimmed
   const view = model.model.findView(opts.viewId as any)
 
-  const onInitialized = ({ xyflow }: { xyflow: any }) => {
+  const onInitialized = ({ diagram, xyflow }: { diagram: any; xyflow: any }) => {
     cleanup.current?.()
-    if (saved && view?.isLayouted()) {
-      const bounds = pickViewBounds(view.$layouted as any, opts.variant)
-      if (isViewportUsable(saved, bounds)) xyflow.setViewport({ x: saved.x, y: saved.y, zoom: saved.zoom }, { duration: 0 })
-      else void xyflow.fitView({ duration: 0 })
+    // The diagram is initialized with fit view (synchronously, before the first paint); a saved
+    // viewport is applied right after, so there is no visible "fit, then jump".
+    if (saved && view?.isLayouted() && isViewportUsable(saved, pickViewBounds(view.$layouted as any, opts.variant))) {
+      const viewport = { x: saved.x, y: saved.y, zoom: saved.zoom }
+      let tries = 0
+      const apply = () => {
+        if (!host.isConnected) return
+        diagram.send({ type: 'xyflow.setViewport', viewport, duration: 0 })
+        // mark as manually moved so later container resizes do not re-fit the view
+        diagram.send({ type: 'xyflow.viewportMoved', viewport, manually: true })
+        const now = readViewport(host)
+        const ok = !!now && Math.abs(now.x - Math.round(viewport.x)) < 1.5 && Math.abs(now.y - Math.round(viewport.y)) < 1.5 && Math.abs(now.zoom - viewport.zoom) < 1e-3
+        if (!ok && ++tries < 20) requestAnimationFrame(apply)
+        else debug(`restore ${hostId}: ${ok ? 'ok' : 'failed'} (${tries} retries)`)
+      }
+      apply()
     }
-    cleanup.current = makeViewportSaver(host, docKey, hostId, () => xyflow.getViewport())
+    cleanup.current = makeViewportSaver(host, docKey, hostId, () => readViewport(host) ?? xyflow.getViewport())
   }
 
   const bounds = view?.isLayouted() ? pickViewBounds(view.$layouted as any, opts.variant) : null
@@ -136,7 +157,7 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
           pannable
           zoomable
           dynamicViewVariant={opts.variant}
-          {...({ fitView: !saved, onInitialized } as any)}
+          {...({ fitView: true, onInitialized } as any)}
         />
       </LikeC4ModelProvider>
       </div>
@@ -162,8 +183,32 @@ function schemeOf(opts: HostOptions | null): Scheme {
   return opts?.scheme === 'light' || opts?.scheme === 'dark' ? opts.scheme : currentScheme
 }
 
+/** Mount only hosts within ~1 screen of the viewport; others keep their static snapshot. */
+function nearViewport(host: Element): boolean {
+  const r = host.getBoundingClientRect()
+  const h = window.innerHeight || 800
+  // first (synchronous) pass: only what is visible; later passes: within one screen around it
+  return initialPass ? r.bottom > 0 && r.top < h : r.bottom > -h && r.top < 2 * h
+}
+
+let initialPass = false
+
+const observer = typeof IntersectionObserver === 'undefined'
+  ? null
+  : new IntersectionObserver(entries => {
+    if (entries.some(e => e.isIntersecting)) scan()
+  }, { rootMargin: '100% 0px 100% 0px' })
+
 const manager = new HostManager<ModelEntry>(document, {
   createRoot: container => createRoot(container),
+  shouldMount: host => {
+    if (!observer || nearViewport(host)) {
+      observer?.unobserve(host)
+      return true
+    }
+    observer.observe(host)
+    return false
+  },
   model: id => modelFor(id),
   extraKey: ({ opts }) => schemeOf(opts),
   view: ({ host, hostId, opts, data, model }) => (
@@ -179,10 +224,18 @@ function scan(force = false) {
   }
 }
 
-function start() {
+/** Mounts the interactive diagrams. Called by the entry script once the page is shown. */
+export function start() {
+  mark('start')
   currentScheme = vscodeScheme()
   clearOtherDocuments(documentKey())
-  scan()
+  initialPass = true
+  flushSync(() => scan())
+  initialPass = false
+  mark('firstCommit')
+  // mount the remaining hosts near the viewport in a later task (after the first paint)
+  setTimeout(() => scan(), 0)
+  requestAnimationFrame(() => mark('firstFrame'))
   new MutationObserver(() => {
     const s = vscodeScheme()
     if (s !== currentScheme) {
@@ -190,8 +243,5 @@ function start() {
       scan(true)
     }
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  window.addEventListener('vscode.markdown.updateContent', () => scan())
 }
-
-window.addEventListener('vscode.markdown.updateContent', () => scan())
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start)
-else start()

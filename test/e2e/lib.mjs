@@ -128,6 +128,8 @@ export function hostsInfo(frame) {
         height: Math.round(rect.height),
         top: Math.round(rect.top),
         state: JSON.parse(host.querySelector(':scope > script')?.textContent ?? '{}').state,
+        mounted: !!sr,
+        staticSvg: !!host.querySelector(':scope > svg.likec4-static'),
       }
     }
     return out
@@ -148,7 +150,8 @@ export async function waitRendered(page, { timeoutMs = 60000, count, accept } = 
     if (info) {
       const vals = Object.values(info)
       const done = vals.length > 0 && (count === undefined || vals.length >= count)
-        && vals.every(v => v.state !== 'loading' && (v.nodes > 0 || v.notices.some(n => n.startsWith('error'))))
+        && vals.every(v => v.state !== 'loading' && (v.nodes > 0 || v.notices.some(n => n.startsWith('error')) || (!v.mounted && v.staticSvg)))
+        && vals.some(v => v.nodes > 0 || v.notices.length > 0)
         && (!accept || accept(info))
       if (done) return { frame, info }
     }

@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import type MarkdownIt from 'markdown-it'
@@ -30,7 +31,16 @@ export interface ExtensionApi {
 
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
   const output = vscode.window.createOutputChannel('LikeC4 Markdown Preview')
-  const log = (m: string) => output.appendLine(`${new Date().toISOString().slice(11, 23)} ${m}`)
+  const logFile = process.env.LIKEC4_MDP_LOG
+  const log = (m: string) => {
+    const line = `${new Date().toISOString().slice(11, 23)} ${m}`
+    output.appendLine(line)
+    if (logFile) {
+      try {
+        appendFileSync(logFile, `${Date.now()} ${m}\n`)
+      } catch {}
+    }
+  }
   let cfg = config()
 
   const registry = new ProjectRegistry(log)
@@ -79,7 +89,9 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     return [...services.values()].filter(s => isWithin(fsPath, s.root))
   }
   function pushOverlay(doc: vscode.TextDocument) {
-    for (const s of servicesContaining(doc.uri.fsPath)) void s.setOverlay(doc.uri.fsPath, doc.getText(), doc.version)
+    const targets = servicesContaining(doc.uri.fsPath)
+    if (targets.length > 0) log(`[edit] ${path.basename(doc.uri.fsPath)} v${doc.version} -> ${targets.length} service(s)`)
+    for (const s of targets) void s.setOverlay(doc.uri.fsPath, doc.getText(), doc.version)
   }
   function syncOpenDocuments(s: ModelService) {
     for (const doc of vscode.workspace.textDocuments) {

@@ -9,3 +9,6 @@
 .markdown-body .likec4-model {
   display: none !important;
 }
+.markdown-body .likec4-view > svg.likec4-static {
+  max-width: 100%;
+}

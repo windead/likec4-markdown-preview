@@ -9,6 +9,7 @@ import type Token from 'markdown-it/lib/token.mjs'
 import { isLikeC4Fence, NAME_RE, parseFenceOptions, parseViewId, type FenceOptions } from './fence'
 import { escapeHtml, escapeJsonForScript, jsonForScript } from './html'
 import type { ProjectInfo } from './projects'
+import { renderStaticSvg } from './staticSvg'
 import type { HostData, HostOptions, ProjectSnapshot, RenderDeps } from './types'
 
 type Env = Record<string, unknown> & { currentDocument?: { fsPath?: string; toString(): string } }
@@ -101,9 +102,29 @@ function firstLikeC4Fence(tokens: Token[]): number {
   return tokens.findIndex(t => t.type === 'fence' && isLikeC4Fence(t.info))
 }
 
-function hostHtml(id: string, opts: HostOptions | null, data: HostData): string {
+function hostHtml(id: string, opts: HostOptions | null, data: HostData, fallback = ''): string {
   const attr = opts ? ` data-likec4-opts="${escapeHtml(JSON.stringify(opts))}"` : ''
-  return `<div class="likec4-view" id="${escapeHtml(id)}"${attr}><script type="application/json">${jsonForScript(data)}</script></div>\n`
+  return `<div class="likec4-view" id="${escapeHtml(id)}"${attr}><script type="application/json">${jsonForScript(data)}</script>${fallback}</div>\n`
+}
+
+const svgCache = new Map<string, string>()
+
+/** Static SVG of the view (cached), shown until the interactive diagram is mounted. */
+function staticSnapshot(snap: ProjectSnapshot, viewId: string, opts: HostOptions): string {
+  const view = snap.data?.views[viewId] as any
+  if (!view) return ''
+  const key = `${view.hash ?? snap.hash}|${viewId}|${opts.variant}|${opts.maxHeight}`
+  let svg = svgCache.get(key)
+  if (svg === undefined) {
+    try {
+      svg = renderStaticSvg(view, opts.variant, opts.maxHeight, (snap.data as any)?.specification?.customColors)
+    } catch {
+      svg = ''
+    }
+    if (svgCache.size > 500) svgCache.delete(svgCache.keys().next().value!)
+    svgCache.set(key, svg)
+  }
+  return svg
 }
 
 export function renderLikeC4Fence(tokens: Token[], idx: number, env: Env, deps: RenderDeps): string {
@@ -168,7 +189,7 @@ export function renderLikeC4Fence(tokens: Token[], idx: number, env: Env, deps: 
     ...(snap.message && snap.state === 'stale' ? { message: snap.message } : {}),
     ...(payload.trimmed ? { trimmed: true } : {}),
   }
-  return out + hostHtml(hostId, hostOpts, data)
+  return out + hostHtml(hostId, hostOpts, data, staticSnapshot(snap, viewId, hostOpts))
 }
 
 /** Installs the fence rule; non-likec4 fences go to the previous rule untouched. */
