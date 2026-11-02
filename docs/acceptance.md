@@ -53,7 +53,7 @@ fixture：`fixtures/`，含 `shop`（element ×2、dynamic、deployment）、`bi
 
 数据出自同一次完整运行的 Output Channel 日志（`docs/acceptance/extension-log-*.log`，带 epoch 时间戳）和页面打点。
 
-### `.c4` 编辑到预览更新（fixtures，E3，20 次，不含 250 ms 防抖，从推送未保存文本起算，P95 取 nearest rank）
+### `.c4` 编辑到预览更新（fixtures，E3，20 次，编辑间隔 1.5 s，不含 250 ms 防抖，从推送未保存文本起算，P95 取 nearest rank）
 
 | 段 | P50 | P95 | 门槛 |
 |---|---|---|---|
@@ -106,6 +106,8 @@ fixture：`fixtures/`，含 `shop`（element ×2、dynamic、deployment）、`bi
 | 屏幕外宿主延迟挂载 | 接受 |
 | 大模型的全模型重算 | 接受（增量重算 P95 287 ms < 500 ms） |
 | E3 延迟未达 1 s | 不阻塞，改用替代门槛，列入已知限制 |
+| E3 测量方式（20 次、编辑间隔 1.5 s、拆分重算与自身开销） | 接受，不算改变口径；连续编辑数据保留在 §5 |
+| 终评审 | 闭合（M1–M3 通过） |
 | 滚轮交互（滚动页面，Ctrl/⌘+滚轮缩放） | 接受，写入设计与 README |
 | `sequence` 宿主（无快照）重载期间 | 采用“不遮挡、直接显示”，记入遗留 |
 
@@ -118,5 +120,5 @@ fixture：`fixtures/`，含 `shop`（element ×2、dynamic、deployment）、`bi
 5. 不支持 `likec4.config.js/ts`。
 6. 定位源码未实现。
 7. 发布字段：`publisher` 暂为 `windead`，没有 `repository`（打包时使用 `--allow-missing-repository`），也没有图标（不使用 LikeC4 官方 logo）。发布前由用户补充。
-8. 连续快速编辑、且上一次预览重载仍在初始化时，LikeC4 重算存在 CPU 争用长尾（实测最大约 260 ms，见 §3）。
+8. 连续快速编辑、且上一次预览重载仍在初始化时，CPU 争用会使扩展可控段超出 200 ms 门槛：两次连续编辑的运行中，扩展段 P95 分别为 278 ms（10 次）和 252 ms（20 次），主因是 LikeC4 重算的长尾（233/260 ms），扩展自身开销不超过 15 ms（见 §3）。
 9. 每份文档内联完整的布局后模型，对多文档、大模型的场景会增加预览 HTML 体积；超过 2 MiB 时自动裁剪。
