@@ -11,7 +11,6 @@ diag.marks.scriptStart ??= Math.round(performance.now())
 function startApp() {
   if (diag.started) return
   diag.started = true
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const app = require('./app') as typeof import('./app')
   app.start()
 }

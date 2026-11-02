@@ -50,25 +50,6 @@ async function zoomPan(vs, frame, hostId) {
   return (await hostsInfo(frame))[hostId].viewport
 }
 
-/** The preview frame that is currently shown (VS Code swaps a pending frame in on reload). */
-async function activeFrames(page) {
-  const res = []
-  for (const f of page.frames()) {
-    if (f.isDetached()) continue
-    try {
-      if (!(await f.evaluate(() => !!document.querySelector('.markdown-body')))) continue
-      const parent = f.parentFrame()
-      const el = parent ? await parent.evaluate(() => {
-        // the inner content frame lives in the webview host page; report which host iframe is active
-        return document.getElementById('active-frame') ? 'host' : 'none'
-      }).catch(() => 'n/a') : 'n/a'
-      const visible = await f.evaluate(() => document.visibilityState).catch(() => 'n/a')
-      res.push({ f, parent: el, visible })
-    } catch {}
-  }
-  return res
-}
-
 async function scenario(name, fn) {
   if (only.length && !only.includes(name)) return
   const t0 = Date.now()
