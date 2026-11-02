@@ -1,0 +1,61 @@
+1793642396681 [activate] VS Code 1.144.0, Node 24.22.1
+1793642397788 [render] sample.md: 4 likec4-view block(s) in 1.2 ms
+1793642397960 [projects] shop@/tmp/likec4-ws-5b1SIw/shop, billing@/tmp/likec4-ws-5b1SIw/billing, large@/tmp/likec4-ws-5b1SIw/large (1278 ms)
+1793642397967 [refresh] markdown.preview.refresh: LikeC4 projects changed
+1793642398320 [render] sample.md: 4 likec4-view block(s) in 41.9 ms
+1793642400407 [init] /tmp/likec4-ws-5b1SIw: 3 documents, projects [billing, large, shop] in 2128 ms
+1793642401017 [layout] shop: ok (changed) in 609 ms, 4 views, 15985 bytes
+1793642401041 [layout] billing: ok (changed) in 23 ms, 2 views, 3058 bytes
+1793642401050 [refresh] markdown.preview.refresh: model changed: shop, billing
+1793642401359 [render] sample.md: 4 likec4-view block(s) in 6.3 ms
+1793642407469 [render] sample.md: 4 likec4-view block(s) in 0.3 ms
+1793642409227 [edit] model.c4 v2 -> 1 service(s)
+1793642409265 [layout] shop: ok (changed) in 29 ms, 4 views, 15997 bytes
+1793642409270 [refresh] markdown.preview.refresh: model changed: shop
+1793642409572 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793642410932 [edit] model.c4 v3 -> 1 service(s)
+1793642410962 [layout] shop: ok (changed) in 26 ms, 4 views, 15997 bytes
+1793642410968 [refresh] markdown.preview.refresh: model changed: shop
+1793642411273 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793642412946 [edit] model.c4 v4 -> 1 service(s)
+1793642413113 [layout] shop: ok (changed) in 157 ms, 4 views, 15997 bytes
+1793642413119 [refresh] markdown.preview.refresh: model changed: shop
+1793642413423 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793642415140 [edit] model.c4 v5 -> 1 service(s)
+1793642415188 [layout] shop: ok (changed) in 39 ms, 4 views, 15997 bytes
+1793642415193 [refresh] markdown.preview.refresh: model changed: shop
+1793642415496 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
+1793642417155 [edit] model.c4 v6 -> 1 service(s)
+1793642417207 [layout] shop: ok (changed) in 44 ms, 4 views, 15997 bytes
+1793642417214 [refresh] markdown.preview.refresh: model changed: shop
+1793642417519 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793642419177 [edit] model.c4 v7 -> 1 service(s)
+1793642419229 [layout] shop: ok (changed) in 39 ms, 4 views, 15997 bytes
+1793642419235 [refresh] markdown.preview.refresh: model changed: shop
+1793642419538 [render] sample.md: 4 likec4-view block(s) in 1.2 ms
+1793642421298 [edit] model.c4 v8 -> 1 service(s)
+1793642421399 [layout] shop: ok (changed) in 95 ms, 4 views, 15997 bytes
+1793642421406 [refresh] markdown.preview.refresh: model changed: shop
+1793642421710 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793642423335 [edit] model.c4 v9 -> 1 service(s)
+1793642423376 [layout] shop: ok (changed) in 33 ms, 4 views, 15997 bytes
+1793642423382 [refresh] markdown.preview.refresh: model changed: shop
+1793642423685 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793642425251 [edit] model.c4 v10 -> 1 service(s)
+1793642425297 [layout] shop: ok (changed) in 41 ms, 4 views, 15997 bytes
+1793642425304 [refresh] markdown.preview.refresh: model changed: shop
+1793642425612 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
+1793642427058 [edit] model.c4 v11 -> 1 service(s)
+1793642427081 [layout] shop: ok (changed) in 18 ms, 4 views, 16001 bytes
+1793642427086 [refresh] markdown.preview.refresh: model changed: shop
+1793642427389 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793642428568 [edit] model.c4 v12 -> 1 service(s)
+1793642429196 [layout] shop: stale (changed) in 1 ms, 4 views, 16001 bytes
+1793642429202 [refresh] markdown.preview.refresh: model changed: shop
+1793642429504 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793642431567 [edit] model.c4 v13 -> 1 service(s)
+1793642431671 [layout] shop: ok (changed) in 97 ms, 4 views, 16009 bytes
+1793642431676 [refresh] markdown.preview.refresh: model changed: shop
+1793642431983 [render] sample.md: 4 likec4-view block(s) in 1.8 ms
+1793642433049 [render] sample.md: 4 likec4-view block(s) in 0.2 ms
+1793642434053 [render] sample.md: 4 likec4-view block(s) in 0.2 ms

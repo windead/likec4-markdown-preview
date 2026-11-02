@@ -1,0 +1,42 @@
+{
+  "ours": {
+    "likec4-shop-index-1": {
+      "nodes": 3,
+      "edges": 2,
+      "titles": [
+        "CustomerBuys things in the web shop",
+        "Web ShopOnline store",
+        "Payment ProviderExternal card processing"
+      ]
+    },
+    "likec4-shop-checkout-1": {
+      "nodes": 5,
+      "edges": 4,
+      "titles": [
+        "CustomerBuys things in the web shop",
+        "FrontendReactSingle page application",
+        "APINode.jsBusiness logic",
+        "Payment ProviderExternal card processing",
+        "DatabasePostgreSQL"
+      ]
+    },
+    "likec4-shop-prodDeployment-1": {
+      "nodes": 5,
+      "edges": 2,
+      "titles": [
+        "Web VM",
+        "Data VM",
+        "FrontendReactSingle page application",
+        "APINode.jsBusiness logic",
+        "DatabasePostgreSQL"
+      ]
+    },
+    "likec4-billing-billingOverview-1": {
+      "nodes": 0,
+      "edges": 0,
+      "titles": []
+    }
+  },
+  "screenshots": 4,
+  "match": true
+}

@@ -10,20 +10,33 @@ VS Code 扩展 **Markdown Preview for LikeC4**（包名 `likec4-markdown-preview
 - 经 ADVISOR 裁定后的最终设计：`docs/design.md`（只写最终结论，不写过程与否决方案）。
 - 第 0 步探测记录：`docs/probe.md`；验收报告：`docs/acceptance.md`。
 
-当前状态：仓库刚初始化，尚无代码。下一步是第 0 步探测（P1–P5，见 `docs/task.md` 第 4 节）。
+当前状态：0.1.0 已实现并验收（`docs/acceptance.md`）；最终设计见 `docs/design.md`（含 ADVISOR 裁定）。
 
 ## 命令
 
-工程尚未搭建。预定工具链：TypeScript、esbuild（两份产物：扩展端 Node bundle 与预览端浏览器 bundle `preview.js`）、ESLint、单元测试（预览脚本用 jsdom + morphdom）、`@vscode/test-electron` 集成测试、`vsce package` 打包 VSIX。**搭建 `package.json` 后，把 build / lint / 全量测试 / 单个测试 / 集成测试 / 打包的实际命令补写到本节。**
+```bash
+npm run build                 # esbuild → dist/extension.js (Node CJS) + dist/preview.js (IIFE)；--dev 不压缩带 sourcemap
+npx tsc -p .                  # 类型检查（esbuild 不做类型检查）
+npx eslint .
+npx vitest run                # 单元测试；单个：npx vitest run test/unit/markdownIt.test.ts -t "关键字"
+xvfb-run -a node test/integration/run.mjs                      # @vscode/test-electron，VS Code 1.144（VSCODE_VERSION=1.123.0 测下限）
+xvfb-run -a -s "-screen 0 1600x1000x24" node test/e2e/run.mjs  # Playwright 驱动真实 VS Code；可传场景名：E1-E2-E3-E4-E5 P1c E6-theme E9-large E7-coexist
+node scripts/notices.mjs      # 由 dist/meta.json 生成 THIRD_PARTY_NOTICES（需先 build）
+npm run package               # build + notices + vsce package
+```
+
+- e2e 结果与截图在 `test-results/e2e/`（无参数运行会先清空）；`test/e2e/driver/` 是仅测试时加载的驱动扩展（打开文件、未保存编辑、改设置）。E7 需先把官方扩展装到 `.vscode-test/e7-extensions`，E8 用 `test/e2e/e8-mkdocs.mjs <已构建的 mkdocs 目录>`。
+- WSL 下 `!` 执行的命令没有 TTY，`sudo` 需用户在终端自行执行。
 
 ## 架构（跨文件的关键点）
 
 两端通过**内联在 HTML 中的 JSON** 单向通信，预览脚本无法直接与扩展通信。
 
 **扩展宿主（Node）**
+- 注意：`markdown.preview.refresh` 是**强制整页重载**（P1 结论），只改 `.c4` 时不存在走 morphdom 的路径；为此宿主 light DOM 内有服务端生成的静态 SVG 快照（`src/staticSvg.ts`），预览入口（`preview/index.ts`）先按保存视口定位快照、再懒加载应用（`preview/app.tsx`），图在 shadow 内隐藏初始化、就绪后才替换 `<slot>` 显示的快照。细节见 `docs/design.md` §3.3。
 - `src/markdownIt.ts`：同步 markdown-it fence 规则，只接管 info string 以 `likec4-view` 开头的块，其余交回原规则（须能与其他改写 fence 的插件串联）。**规则内只读缓存**，不做 I/O 或布局；缓存未就绪输出 `state: "loading"` 占位，就绪后触发刷新。
 - `src/projects.ts`：扫描各工作区根中的 `likec4.config.json` / `.likec4rc` / `likec4.config.{js,ts}`；从 Markdown 所在目录向上找最近项目（同 mkdocs-likec4 `_find_nearest_project`），兜底为默认项目（无配置、根目录有 `.c4`）。
-- `src/modelService.ts`：每个项目一个实例，惰性创建。继承 `LikeC4`（`@likec4/language-services`）以访问 `protected langium`；磁盘变化靠 `fromWorkspace(root, {watch:true})`，未保存编辑经防抖后写入 Langium 文档并 `DocumentBuilder.update`，文档未保存关闭时回退磁盘内容。`onModelUpdate` 后**只重算已被渲染引用的视图**，比较布局哈希，有变化才调用一次 `markdown.preview.refresh`。同项目重算串行，丢弃排队中的旧请求。模型出错时保留上次成功布局，状态 `stale`。
+- `src/modelService.ts`：每个 LikeC4 工作区根一个实例，惰性创建。不继承 `LikeC4`，而是用 `@likec4/language-server` 的公开模块组装服务后 `new LikeC4(services)`，未保存文本走 Langium `TextDocuments.set/delete`；磁盘变化靠 `fromWorkspace(root, {watch:true})`，未保存编辑经防抖后写入 Langium 文档并 `DocumentBuilder.update`，文档未保存关闭时回退磁盘内容。`onModelUpdate` 后**只重算已被渲染引用的视图**，比较布局哈希，有变化才调用一次 `markdown.preview.refresh`。同项目重算串行，丢弃排队中的旧请求。模型出错时保留上次成功布局，状态 `stale`。
 
 **预览 webview（`preview/` → `preview.js`，经 `markdown.previewScripts` 注入）**
 - 在 `DOMContentLoaded` 与每次 `vscode.markdown.updateContent` 后扫描 `.likec4-view` 宿主。

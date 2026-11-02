@@ -1,0 +1,338 @@
+{
+  "E1-E2-E3-E4-E5": {
+    "ok": true,
+    "E1": {
+      "firstRenderMs": 6989,
+      "hosts": {
+        "likec4-shop-221f6a-index-1": {
+          "nodes": 3,
+          "edges": 2,
+          "height": 600,
+          "scheme": "dark"
+        },
+        "likec4-shop-221f6a-checkout-1": {
+          "nodes": 5,
+          "edges": 4,
+          "height": 160,
+          "scheme": "dark"
+        },
+        "likec4-shop-221f6a-prodDeployment-1": {
+          "nodes": 5,
+          "edges": 2,
+          "height": 600,
+          "scheme": "dark"
+        },
+        "likec4-billing-221f6a-billingOverview-1": {
+          "nodes": 3,
+          "edges": 1,
+          "height": 600,
+          "scheme": "light"
+        }
+      },
+      "initiallyMounted": 3
+    },
+    "E2": {
+      "sameFrame": true,
+      "viewportBefore": "translate(78px, -74px) scale(0.972486)",
+      "viewportAfter": "translate(78px, -74px) scale(0.972486)",
+      "marksKept": true
+    },
+    "E3": {
+      "note": "all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh",
+      "rows": [
+        {
+          "i": 1,
+          "debounceMs": 345,
+          "extensionMs": 43,
+          "recomputeMs": 38,
+          "navigationMs": 352,
+          "snapshotVisibleMs": 542,
+          "interactiveMs": 876,
+          "restoreRetries": 1
+        },
+        {
+          "i": 2,
+          "debounceMs": 277,
+          "extensionMs": 36,
+          "recomputeMs": 30,
+          "navigationMs": 356,
+          "snapshotVisibleMs": 660,
+          "interactiveMs": 1171,
+          "restoreRetries": 1
+        },
+        {
+          "i": 3,
+          "debounceMs": 334,
+          "extensionMs": 173,
+          "recomputeMs": 167,
+          "navigationMs": 489,
+          "snapshotVisibleMs": 840,
+          "interactiveMs": 1376,
+          "restoreRetries": 1
+        },
+        {
+          "i": 4,
+          "debounceMs": 325,
+          "extensionMs": 53,
+          "recomputeMs": 48,
+          "navigationMs": 369,
+          "snapshotVisibleMs": 705,
+          "interactiveMs": 1230,
+          "restoreRetries": 1
+        },
+        {
+          "i": 5,
+          "debounceMs": 276,
+          "extensionMs": 59,
+          "recomputeMs": 52,
+          "navigationMs": 376,
+          "snapshotVisibleMs": 716,
+          "interactiveMs": 1241,
+          "restoreRetries": 1
+        },
+        {
+          "i": 6,
+          "debounceMs": 290,
+          "extensionMs": 58,
+          "recomputeMs": 52,
+          "navigationMs": 375,
+          "snapshotVisibleMs": 750,
+          "interactiveMs": 1350,
+          "restoreRetries": 1
+        },
+        {
+          "i": 7,
+          "debounceMs": 300,
+          "extensionMs": 108,
+          "recomputeMs": 101,
+          "navigationMs": 427,
+          "snapshotVisibleMs": 747,
+          "interactiveMs": 1258,
+          "restoreRetries": 1
+        },
+        {
+          "i": 8,
+          "debounceMs": 281,
+          "extensionMs": 47,
+          "recomputeMs": 41,
+          "navigationMs": 361,
+          "snapshotVisibleMs": 680,
+          "interactiveMs": 1159,
+          "restoreRetries": 1
+        },
+        {
+          "i": 9,
+          "debounceMs": 256,
+          "extensionMs": 53,
+          "recomputeMs": 46,
+          "navigationMs": 371,
+          "snapshotVisibleMs": 681,
+          "interactiveMs": 1065,
+          "restoreRetries": 1
+        },
+        {
+          "i": 10,
+          "debounceMs": 324,
+          "extensionMs": 28,
+          "recomputeMs": 23,
+          "navigationMs": 338,
+          "snapshotVisibleMs": 507,
+          "interactiveMs": 797,
+          "restoreRetries": 1
+        }
+      ],
+      "extension": {
+        "p50": 53,
+        "p95": 173
+      },
+      "snapshotVisible": {
+        "p50": 681,
+        "p95": 840
+      },
+      "interactive": {
+        "p50": 1171,
+        "p95": 1376
+      },
+      "restoreRetries": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "E4": {
+      "staleNotice": [
+        "warning: Showing the last valid version. LikeC4 model has errors: model.c4:19 Expecting token of type '}' but found `{`. (+30 more)"
+      ],
+      "nodesWhileStale": 3,
+      "afterFix": []
+    },
+    "E5": {
+      "error": [
+        "error: View \"indexx\" not found in LikeC4 project \"shop\"."
+      ],
+      "restoredNodes": 3
+    },
+    "console": [],
+    "ms": 48814
+  },
+  "P1c": {
+    "ok": true,
+    "caseA_saved": {
+      "frames": 204,
+      "blankFrames": 0,
+      "snapshotFrames": 4,
+      "interactiveFrames": 200,
+      "distinctInteractiveTransforms": [
+        "translate(160px, -11px) scale(0.458849)"
+      ],
+      "snapshotVsInteractive": {
+        "dx": 0,
+        "dy": 0,
+        "dzoom": 5.551115123125783e-17
+      },
+      "expected": {
+        "x": 160,
+        "y": -11,
+        "zoom": 0.458849
+      }
+    },
+    "caseB_untouched": {
+      "frames": 204,
+      "blankFrames": 0,
+      "snapshotFrames": 3,
+      "interactiveFrames": 201,
+      "distinctInteractiveTransforms": [
+        "translate(16px, 34px) scale(0.196177)"
+      ],
+      "snapshotVsInteractive": {
+        "dx": 3.552713678800501e-15,
+        "dy": 7.105427357601002e-15,
+        "dzoom": 6.237424546307047e-8
+      }
+    },
+    "caseC_outOfView": {
+      "frames": 219,
+      "blankFrames": 0,
+      "snapshotFrames": 3,
+      "interactiveFrames": 216,
+      "distinctInteractiveTransforms": [
+        "translate(16px, 34px) scale(0.196177)"
+      ],
+      "snapshotVsInteractive": {
+        "dx": 3.552713678800501e-15,
+        "dy": 7.105427357601002e-15,
+        "dzoom": 6.237424546307047e-8
+      },
+      "finalTransform": "translate(16px, 34px) scale(0.196177)"
+    },
+    "ms": 29814
+  },
+  "E6-theme": {
+    "ok": true,
+    "dark": {
+      "auto": "dark",
+      "light": "light"
+    },
+    "Default Light Modern": {
+      "auto": "light",
+      "light": "light"
+    },
+    "Default High Contrast": {
+      "auto": "dark",
+      "light": "light"
+    },
+    "Default High Contrast Light": {
+      "auto": "light",
+      "light": "light"
+    },
+    "ms": 19725
+  },
+  "E9-large": {
+    "ok": true,
+    "firstScreenMs": 7999,
+    "firstScreen": {
+      "index-1": 13,
+      "sys1View-1": 10,
+      "sys2View-1": 10,
+      "sys3View-1": "static",
+      "s1c1View-1": "static",
+      "s1c2View-1": "static",
+      "flow1-1": "static",
+      "flow2-1": "static",
+      "prodView-1": "static",
+      "sys4View-1": "static"
+    },
+    "afterScroll": {
+      "index-1": 13,
+      "sys1View-1": 10,
+      "sys2View-1": 10,
+      "sys3View-1": 10,
+      "s1c1View-1": 5,
+      "s1c2View-1": 6,
+      "flow1-1": 6,
+      "flow2-1": 6,
+      "prodView-1": 16,
+      "sys4View-1": 9
+    },
+    "latency": {
+      "lat": [
+        1595,
+        1780,
+        2131,
+        2185,
+        2845,
+        2032,
+        2201,
+        2179,
+        2121,
+        2239
+      ],
+      "p50": 2131,
+      "p95": 2845
+    },
+    "ms": 43245
+  },
+  "E7-coexist": {
+    "ok": true,
+    "likec4Nodes": 3,
+    "mermaidSvg": true,
+    "extensions": [
+      {
+        "id": "likec4.likec4-vscode",
+        "active": true
+      },
+      {
+        "id": "test.likec4-e2e-driver",
+        "active": true
+      },
+      {
+        "id": "windead.likec4-markdown-preview",
+        "active": true
+      }
+    ],
+    "diagnostics": [
+      {
+        "file": "/tmp/likec4-ws-YrLwIj/shop/model.c4",
+        "count": 1,
+        "sources": [
+          "likec4"
+        ]
+      }
+    ],
+    "staleWhileOfficialActive": [
+      "warning: Showing the last valid version. LikeC4 model has errors: model.c4:19 Expecting token of type '}' but found `{`."
+    ],
+    "officialPreview": true,
+    "diagnosticSources": [
+      "likec4"
+    ],
+    "ms": 29298
+  }
+}
