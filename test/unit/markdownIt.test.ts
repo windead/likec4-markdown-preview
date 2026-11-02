@@ -11,8 +11,18 @@ const ROOT = path.resolve('/ws')
 const shop: ProjectInfo = { name: 'shop', root: path.join(ROOT, 'shop'), kind: 'json', configPath: '', serviceRoot: ROOT }
 const billing: ProjectInfo = { name: 'billing', root: path.join(ROOT, 'billing'), kind: 'json', configPath: '', serviceRoot: ROOT }
 
+const layouted = (v: string) => ({
+  id: v,
+  title: `</script>${v}`,
+  hash: `vh-${v}`,
+  _type: 'element',
+  bounds: { x: 0, y: 0, width: 400, height: 200 },
+  nodes: [{ id: 'n1', title: '<b>Node & "1"</b>', x: 0, y: 0, width: 200, height: 100, children: [], color: 'primary', shape: 'rectangle' }],
+  edges: [{ id: 'e1', points: [[0, 0], [10, 10], [20, 20], [30, 30]], label: 'calls', labelBBox: { x: 5, y: 5, width: 30, height: 12 }, color: 'gray' }],
+})
+
 function snapshot(views: string[], extra: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
-  const data = { views: Object.fromEntries(views.map(v => [v, { id: v, title: `</script>${v}` }])), elements: {} }
+  const data = { views: Object.fromEntries(views.map(v => [v, layouted(v)])), elements: {} }
   return { hash: 'h1', state: 'ok', viewIds: new Set(views), data, modelJson: escapeJsonForScript(JSON.stringify(data)), ...extra }
 }
 
@@ -141,6 +151,24 @@ describe('likec4 fence rendering', () => {
     const { doc, models } = parse(render('```likec4-view\nindex\n```\n\nafter', makeDeps().deps))
     expect((models[0]!.data.model as any).views.index.title).toBe('</script>index')
     expect(doc.body.textContent).toContain('after')
+  })
+
+  it('includes an escaped static snapshot with host-unique element ids', () => {
+    const { doc } = parse(render('```likec4-view\nindex\n```\n```likec4-view\nindex\n```', makeDeps().deps))
+    const svgs = [...doc.querySelectorAll('.likec4-view > svg.likec4-static')]
+    expect(svgs).toHaveLength(2)
+    expect(svgs[0]!.textContent).toContain('<b>Node &')
+    expect(svgs[0]!.querySelector('b')).toBeNull()
+    expect(svgs[0]!.getAttribute('data-bounds')).toBe('0 0 400 200')
+    const ids = [...doc.querySelectorAll('[id]')].map(e => e.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    const markerRef = svgs[1]!.querySelector('path[marker-end]')!.getAttribute('marker-end')!
+    expect(markerRef).toContain(doc.querySelectorAll('.likec4-view')[1]!.id)
+  })
+
+  it('no snapshot for loading/error hosts', () => {
+    const { doc } = parse(render('```likec4-view\nnope\n```', makeDeps().deps))
+    expect(doc.querySelector('svg.likec4-static')).toBeNull()
   })
 
   it('enabled=false renders a plain code block', () => {

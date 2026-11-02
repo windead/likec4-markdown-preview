@@ -8,7 +8,7 @@ import { LikeC4ModelProvider, LikeC4View, pickViewBounds } from '@likec4/diagram
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
-import { HostManager, readJson } from './hosts'
+import { HostManager, markReady, readJson } from './hosts'
 import { clearOtherDocuments, documentKey, loadViewport, makeViewportSaver, isViewportUsable, type SavedViewport } from './viewport'
 import type { HostData, HostOptions, ModelData } from '../src/types'
 
@@ -22,7 +22,7 @@ interface ModelEntry {
 
 const models = new Map<string, ModelEntry>()
 /** Diagnostics for tests: viewport restore decisions. */
-const diag = ((window as any).__likec4 ??= { log: [] as string[], marks: {} as Record<string, number> })
+const diag: any = ((window as any).__likec4 ??= { log: [] as string[], marks: {} as Record<string, number> })
 const debugLog: string[] = diag.log
 const mark = (name: string) => {
   diag.marks[name] ??= Math.round(performance.now())
@@ -55,6 +55,12 @@ function modelFor(id: string): ModelEntry | null {
     return null
   }
 }
+
+/**
+ * The wheel scrolls the Markdown page (it must not be captured by the diagram);
+ * Ctrl/Cmd + wheel or pinch zooms, dragging pans.
+ */
+const REACT_FLOW_PROPS = { zoomOnScroll: false, panOnScroll: false, preventScrolling: false } as const
 
 /** Padding (px, diagram units) around the view bounds when sizing the frame. */
 const PAD = 16
@@ -110,8 +116,9 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
   const onInitialized = ({ diagram, xyflow }: { diagram: any; xyflow: any }) => {
     cleanup.current?.()
     // The diagram is initialized with fit view (synchronously, before the first paint); a saved
-    // viewport is applied right after, so there is no visible "fit, then jump".
-    if (saved && view?.isLayouted() && isViewportUsable(saved, pickViewBounds(view.$layouted as any, opts.variant))) {
+    // viewport that still shows the view is applied right after (same rule as the snapshot).
+    const frame = host.shadowRoot?.querySelector('[data-likec4-frame]')?.getBoundingClientRect()
+    if (saved && frame && view?.isLayouted() && isViewportUsable({ ...saved, w: frame.width, h: frame.height }, pickViewBounds(view.$layouted as any, opts.variant))) {
       const viewport = { x: saved.x, y: saved.y, zoom: saved.zoom }
       let tries = 0
       const apply = () => {
@@ -122,9 +129,16 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
         const now = readViewport(host)
         const ok = !!now && Math.abs(now.x - Math.round(viewport.x)) < 1.5 && Math.abs(now.y - Math.round(viewport.y)) < 1.5 && Math.abs(now.zoom - viewport.zoom) < 1e-3
         if (!ok && ++tries < 20) requestAnimationFrame(apply)
-        else debug(`restore ${hostId}: ${ok ? 'ok' : 'failed'} (${tries} retries)`)
+        else {
+          diag.restores = [...(diag.restores ?? []), { hostId, ok, retries: tries }]
+          debug(`restore ${hostId}: ${ok ? 'ok' : 'failed'} (${tries} retries)`)
+          markReady(host)
+        }
       }
       apply()
+    } else {
+      // the initial fit is applied synchronously during initialization
+      markReady(host)
     }
     cleanup.current = makeViewportSaver(host, docKey, hostId, () => readViewport(host) ?? xyflow.getViewport())
   }
@@ -157,6 +171,7 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
           pannable
           zoomable
           dynamicViewVariant={opts.variant}
+          reactFlowProps={REACT_FLOW_PROPS}
           {...({ fitView: true, onInitialized } as any)}
         />
       </LikeC4ModelProvider>
@@ -165,12 +180,22 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
   )
 }
 
+function Ready({ host }: { host: Element }) {
+  useEffect(() => markReady(host), [host])
+  return null
+}
+
 function HostView(props: HostProps) {
-  const { data, model, opts } = props
-  if (data.state === 'loading') return <Notice kind="info">Loading LikeC4 view…</Notice>
-  if (data.state === 'error') return <Notice kind="error">{data.message ?? 'LikeC4 view error'}</Notice>
-  if (!model) return <Notice kind="error">LikeC4 model data is missing.</Notice>
-  if (!model.model.findView(opts.viewId as any)) return <Notice kind="error">View "{opts.viewId}" not found.</Notice>
+  const { data, model, opts, host } = props
+  useEffect(() => {
+    // never keep the snapshot forever if the diagram does not initialize
+    const t = setTimeout(() => markReady(host), 3000)
+    return () => clearTimeout(t)
+  }, [host])
+  if (data.state === 'loading') return <><Ready host={host} /><Notice kind="info">Loading LikeC4 view…</Notice></>
+  if (data.state === 'error') return <><Ready host={host} /><Notice kind="error">{data.message ?? 'LikeC4 view error'}</Notice></>
+  if (!model) return <><Ready host={host} /><Notice kind="error">LikeC4 model data is missing.</Notice></>
+  if (!model.model.findView(opts.viewId as any)) return <><Ready host={host} /><Notice kind="error">View "{opts.viewId}" not found.</Notice></>
   return <Diagram {...props} model={model} />
 }
 
@@ -233,6 +258,7 @@ export function start() {
   flushSync(() => scan())
   initialPass = false
   mark('firstCommit')
+  requestAnimationFrame(() => mark('interactiveFrame'))
   // mount the remaining hosts near the viewport in a later task (after the first paint)
   setTimeout(() => scan(), 0)
   requestAnimationFrame(() => mark('firstFrame'))

@@ -35,6 +35,24 @@ interface Entry {
   key: string | null
 }
 
+// The ready flag lives inside the shadow root: attributes on the host itself would be
+// removed by the preview's morphdom on the next content update.
+export const HOST_STYLE = `
+:host { display: block; position: relative; }
+.likec4-root { position: absolute; top: 0; left: 0; width: 100%; visibility: hidden; }
+.likec4-root[data-ready] { position: static; visibility: visible; }
+.likec4-root[data-ready] + slot { display: none; }
+`
+
+/** Switches a host from its snapshot to the mounted diagram. */
+export function markReady(host: Element) {
+  host.shadowRoot?.querySelector('.likec4-root')?.setAttribute('data-ready', '')
+}
+
+export function isReady(host: Element): boolean {
+  return !!host.shadowRoot?.querySelector('.likec4-root[data-ready]')
+}
+
 export function readJson<T>(el: Element | null): T | null {
   if (!el?.textContent) return null
   try {
@@ -76,8 +94,14 @@ export class HostManager<M extends { hash: string }> {
       this.deferred.delete(host)
       if (!entry) {
         const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
+        // Until the diagram reports ready (see markReady), the default <slot> keeps showing the
+        // light-DOM snapshot while the diagram is laid out invisibly on top of it.
+        const style = this.doc.createElement('style')
+        style.textContent = HOST_STYLE
+        const slot = this.doc.createElement('slot')
         const container = this.doc.createElement('div')
-        shadow.appendChild(container)
+        container.className = 'likec4-root'
+        shadow.append(style, container, slot)
         entry = { root: this.deps.createRoot(container), shadow, key: null }
         this.entries.set(host, entry)
       }

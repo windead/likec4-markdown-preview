@@ -14,6 +14,8 @@ export interface ProjectSnapshot {
   data?: { views: Record<string, unknown>; [k: string]: unknown }
   /** Full model JSON, already escaped for inline <script>. */
   modelJson?: string
+  /** UTF-8 size of modelJson. */
+  modelBytes?: number
 }
 
 /** JSON inside each host's <script type="application/json">. */
@@ -53,4 +55,6 @@ export interface RenderDeps {
   snapshot(project: ProjectInfo): ProjectSnapshot | undefined
   /** Records which projects a document references (used to decide which previews to refresh). */
   recordReferences(docKey: string, projects: ReadonlyArray<ProjectInfo>): void
+  /** Called after the last likec4-view block of a document was rendered. */
+  onRendered?(docKey: string | undefined, blocks: number, ms: number): void
 }

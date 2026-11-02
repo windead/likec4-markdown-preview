@@ -64,8 +64,9 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 
 ```html
 <div class="likec4-model" id="likec4-model-<project>-<rootTag>" hidden><script type="application/json">{"hash":"…","trimmed":false,"model":{…LikeC4Model.Layouted $data…}}</script></div>
-<div class="likec4-view" id="likec4-<project>-<viewId>-<n>" data-likec4-opts='{"project":"…","viewId":"…","browser":true,"variant":"diagram","scheme":"auto"}'>
-  <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","message":"…"}</script>
+<div class="likec4-view" id="likec4-<project>-<rootTag>-<viewId>-<n>" data-likec4-opts='{"project":"…","viewId":"…","model":"likec4-model-…","browser":true,"variant":"diagram","scheme":"auto","maxHeight":600}'>
+  <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","message":"…","trimmed":false}</script>
+  <svg class="likec4-static" viewBox="…" data-bounds="x y w h" …>…静态快照…</svg>
 </div>
 ```
 
@@ -74,29 +75,39 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 - `<n>` 为同一 `<project>-<viewId>` 在文档中的出现序号，使 morphdom 按 id 匹配同一元素。宿主属性只放选项；数据只在 `<script>` 文本中。
 - 宿主 JSON 的 `hash` = 模型哈希 + 视图状态，`view` 不重复内联。
 - JSON 内联前将 `<`、`>`、`&`、U+2028、U+2029 转义为 `\uXXXX`。
-- **体积上限**：转义后模型超过 `maxModelBytes`（缺省 2 MiB）时，把模型的 `views` 裁剪为本文档引用的视图，宿主强制 `browser=false` 并显示提示；文档中全部宿主为 `browser=false` 时也只内联裁剪后的模型。
+- **静态快照**：`ok`/`stale` 宿主的 light DOM 含一份由扩展宿主按布局数据生成的 SVG（节点、复合节点、连线、标签，颜色取 LikeC4 默认主题，缓存键为视图哈希 + 形态 + 最大高度）。快照内的元素 id 带宿主 id 前缀，保证页面内唯一。`dynamic-variant=sequence` 不生成快照。快照只是占位，不追求与交互图逐像素一致；颜色与 LikeC4 一致，亮/暗主题下相同。
+- **体积上限**：转义后模型的 UTF-8 字节数超过 `maxModelBytes`（缺省 2 MiB）时，把模型的 `views` 裁剪为本文档引用的视图，宿主强制 `browser=false` 并显示提示；文档中全部宿主为 `browser=false` 时也只内联裁剪后的模型。
 
 ### 3.3 预览端
 
-- `DOMContentLoaded` 与每次 `vscode.markdown.updateContent` 后扫描一次。
-- 新宿主：`attachShadow({mode:'open'})`，`createRoot`，渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
-- 已有宿主：宿主 JSON 与模型哈希都未变则跳过；否则 `root.render(新 props)`，组件不重挂载。
+- **入口与懒加载**：`preview.js` 的入口很小。在 `DOMContentLoaded` 时，它先把每个静态快照的 `viewBox` 设为交互图将使用的视口：有保存的视口且仍能看到视图时用保存值，否则用 LikeC4 的初始 fit（16px 留白，缩放取 [0.05, 1]，偏移取整）。然后在 `load` 之后（最多 250 ms）才 `require` React/LikeC4 应用。webview 在新文档 `load` 时（或 200 ms 兜底）切换 frame，因此重载时先看到的就是新内容的快照。
+- 应用启动后扫描一次，之后每次 `vscode.markdown.updateContent` 再扫描一次。首次同步渲染（`flushSync`）只挂载当前可见的宿主，视口一屏范围内的宿主在下一个任务挂载，更远的由 `IntersectionObserver` 在接近时挂载；未挂载的宿主继续显示快照。已挂载的宿主不回收。
+- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。3 秒内未就绪也会强制切换。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
+- 已有宿主：宿主 JSON、模型哈希、选项、配色都未变则跳过；否则 `root.render(新 props)`，组件不重挂载。
 - 宿主从文档消失：`unmount` 并清理。
 - 状态：`loading` 显示占位；`error` 显示错误块（不渲染图）；`stale` 渲染上次成功的模型并叠加提示条。
 - 主题：`color-scheme=auto` 读 `document.body` 的 `vscode-light`/`vscode-dark`/`vscode-high-contrast` 类，`MutationObserver` 监听变化；`light`/`dark` 固定。
-- 尺寸：`LikeC4View` 按布局边界（`pickViewBounds(view, variant)`）保持宽高比自适应宽度，最大高度为 `maxHeight`（通过 CSS 变量 `--likec4-view-max-height` 与宿主 `max-height`）。图内可缩放、平移。
-- 视口：以「文档 URI + 宿主 id」为键存 `sessionStorage`（限流写入，只保留当前文档的键）。重载或重挂载时，若有保存的视口，则以 `fitView=false` 渲染并在 `onInitialized` 中 `setViewport` 恢复；否则 fit view。同一宿主数据更新（morphdom 路径）时组件不重挂载，视口自然保持。
+- 尺寸：图框宽 `min(100%, 视图宽 + 32px)`，按布局边界（`pickViewBounds(view, variant)`）保持宽高比，`max-height` 为 `maxHeight`，`min-height` 为 160px，水平居中。快照使用同一公式（服务端内联样式），`LikeC4View` 关闭自身的 `keepAspectRatio`，填满图框。图内可缩放、平移。
+- 视口：以「文档 URI + 宿主 id」为键存 `sessionStorage`，在宿主上以捕获阶段监听交互事件（React Flow 会阻止冒泡），限流写入，并记录图框尺寸。只保留当前文档的键。图始终以 `fitView=true` 初始化（`fitView=false` 时 LikeC4 的平移和缩放不工作），保存的视口若仍能看到视图，就在 `onInitialized` 中通过 `diagram.send({type:'xyflow.setViewport'})` 恢复，并发送 `xyflow.viewportMoved(manually)`，避免之后容器尺寸变化时再次自动 fit。morphdom 路径下组件不重挂载，视口自然保持。
 - 打包：IIFE；`define` `process.env.NODE_ENV`、`import.meta.env.DEV`、`import.meta.env.MODE`。无 `eval`、不插入 `<script>`、无网络请求。
+- 测试辅助：`sessionStorage['likec4-trace']='1'` 时，入口在加载后约 4 秒内逐帧记录可见宿主显示的内容（快照、图、空白）及其视口。
 
 ### 3.4 更新链路与已知限制
 
 | 变化 | 链路 | 效果 |
 |---|---|---|
 | 编辑 Markdown 正文或代码块 | 内置预览非强制刷新 → morphdom | 宿主、shadow root、React 状态、视口全部保留 |
-| 编辑 `.c4`（含未保存） | 防抖 → 重算 → 哈希变化 → `markdown.preview.refresh`（整页重载） | 视口从 sessionStorage 恢复；webview 后台加载后切换 |
+| 编辑 `.c4`（含未保存） | 防抖 → 重算 → 哈希变化 → `markdown.preview.refresh`（整页重载） | 新文档先显示按保存视口定位的快照，交互图就绪后无跳变替换；视口从 sessionStorage 恢复 |
 | `.c4` 出现错误 | 不更新缓存，`stale` | 保留上次结果并提示 |
 
-已知限制：`.c4` 变化会重载所有打开的、引用了受影响项目的 Markdown 预览；浏览浮层、选中、动态视图步进等瞬时状态在重载后丢失。
+已知限制：
+- `.c4` 变化会重载所有打开的、引用了受影响项目的 Markdown 预览；浏览浮层、选中、动态视图步进等瞬时状态在重载后丢失。
+- 重载链路受 VS Code 预览 300 ms 节流和新文档加载约束，交互图就绪约需 1.2–1.4 s（不含防抖），在此之前显示快照。
+- 大模型首次全模型布局为一次性开销（`fixtures/large` 约 550 ms），之后的增量重算 P95 约 290 ms。
+
+### 3.5 日志
+
+Output Channel “LikeC4 Markdown Preview” 记录：`[projects]` 项目发现，`[init]` 工作区初始化耗时，`[edit]` 推送未保存文本，`[layout]` 每次重算的状态、是否变化、耗时、视图数与体积，`[refresh]` 刷新原因，`[render]` markdown-it 渲染的块数与耗时。不输出文件内容。
 
 ## 4. 设置项
 
@@ -117,7 +128,7 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 
 ## 6. 验收口径调整（相对任务书 7.2）
 
-- E3：从 `.c4` 编辑到预览更新 1 秒内（P95，不含防抖）；视口保持；截屏序列中可见区域内的视图不出现空白帧，也不出现先 fit 再跳回。
+- E3：任务书的 P95 < 1 s 受 VS Code 强制重载链路的下限约束；ADVISOR 裁定不阻塞，改用替代门槛（均不含防抖，从推送未保存文本起算）：扩展可控段（推送 → 发起 refresh）P95 ≤ 200 ms；新内容可见（快照就位）P95 ≤ 1.5 s；交互图可用只报告数值。另需视口保持，并以页内逐帧记录（P1c）证明三种情况下（已保存视口、未触碰视图、保存的视口已看不到视图）可见宿主没有空白帧，也没有先 fit 再跳回。
 - E9：本机无 `ci-metrics`，以 `fixtures/large`（脚本生成的大模型）上的 10 视图文档替代；7.3 第二个模型同此。
 
 ## 7. ADVISOR 裁定清单
@@ -131,3 +142,7 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 | 定位源码 | 不纳入首版 |
 | `engines.vscode` | 依赖声明的 Node 版本决定下限，实测扩展宿主 Node |
 | JS/TS 配置 | 不执行，桩替换 `bundle-require`/`esbuild`，渲染错误块 |
+| 静态快照 + 懒加载入口 | 接受（消除强制重载期间的空白帧）；sequence 形态无快照 |
+| 屏幕外宿主延迟挂载 | 接受；已挂载宿主不回收 |
+| 大模型的全模型重算 | 接受（增量重算 P95 287 ms < 500 ms）；拿到真实大模型后复测 |
+| E3 延迟 | 不阻塞，采用 §6 的替代门槛，列入已知限制 |

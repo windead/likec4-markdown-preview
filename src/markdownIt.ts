@@ -9,7 +9,7 @@ import type Token from 'markdown-it/lib/token.mjs'
 import { isLikeC4Fence, NAME_RE, parseFenceOptions, parseViewId, type FenceOptions } from './fence'
 import { escapeHtml, escapeJsonForScript, jsonForScript } from './html'
 import type { ProjectInfo } from './projects'
-import { renderStaticSvg } from './staticSvg'
+import { ID_TOKEN, renderStaticSvg } from './staticSvg'
 import type { HostData, HostOptions, ProjectSnapshot, RenderDeps } from './types'
 
 type Env = Record<string, unknown> & { currentDocument?: { fsPath?: string; toString(): string } }
@@ -26,6 +26,8 @@ interface DocState {
   plan: Map<string, Planned>
   errSeq: number
   loadSeq: number
+  t0: number
+  blocks: number
 }
 
 const STATE_KEY = '__likec4MarkdownPreview'
@@ -90,12 +92,13 @@ function planDocument(tokens: Token[], env: Env, deps: RenderDeps): Map<string, 
 /** Model JSON for a document: full, or trimmed to the referenced views when needed. */
 function modelPayload(snap: ProjectSnapshot, planned: Planned, maxBytes: number): { json: string; trimmed: boolean } {
   const full = snap.modelJson!
-  if (planned.anyBrowser && full.length <= maxBytes) return { json: full, trimmed: false }
+  const bytes = snap.modelBytes ?? Buffer.byteLength(full)
+  if (planned.anyBrowser && bytes <= maxBytes) return { json: full, trimmed: false }
   const views: Record<string, unknown> = {}
   for (const id of planned.views) {
     if (snap.data!.views[id]) views[id] = snap.data!.views[id]
   }
-  return { json: jsonForScript({ ...snap.data, views }), trimmed: full.length > maxBytes }
+  return { json: jsonForScript({ ...snap.data, views }), trimmed: bytes > maxBytes }
 }
 
 function firstLikeC4Fence(tokens: Token[]): number {
@@ -110,7 +113,7 @@ function hostHtml(id: string, opts: HostOptions | null, data: HostData, fallback
 const svgCache = new Map<string, string>()
 
 /** Static SVG of the view (cached), shown until the interactive diagram is mounted. */
-function staticSnapshot(snap: ProjectSnapshot, viewId: string, opts: HostOptions): string {
+function staticSnapshot(snap: ProjectSnapshot, viewId: string, opts: HostOptions, hostId: string): string {
   const view = snap.data?.views[viewId] as any
   if (!view) return ''
   const key = `${view.hash ?? snap.hash}|${viewId}|${opts.variant}|${opts.maxHeight}`
@@ -124,16 +127,31 @@ function staticSnapshot(snap: ProjectSnapshot, viewId: string, opts: HostOptions
     if (svgCache.size > 500) svgCache.delete(svgCache.keys().next().value!)
     svgCache.set(key, svg)
   }
-  return svg
+  return svg.split(ID_TOKEN).join(hostId)
 }
 
 export function renderLikeC4Fence(tokens: Token[], idx: number, env: Env, deps: RenderDeps): string {
+  const html = renderFence(tokens, idx, env, deps)
+  const st = (env as any)[STATE_KEY] as DocState
+  st.blocks++
+  if (idx === lastLikeC4Fence(tokens)) deps.onRendered?.(docKeyOf(env), st.blocks, performance.now() - st.t0)
+  return html
+}
+
+function lastLikeC4Fence(tokens: Token[]): number {
+  for (let i = tokens.length - 1; i >= 0; i--) if (tokens[i]!.type === 'fence' && isLikeC4Fence(tokens[i]!.info)) return i
+  return -1
+}
+
+function renderFence(tokens: Token[], idx: number, env: Env, deps: RenderDeps): string {
   const st: DocState = ((env as any)[STATE_KEY] ??= {
     counts: new Map(),
     emittedModels: new Set(),
     plan: planDocument(tokens, env, deps),
     errSeq: 0,
     loadSeq: 0,
+    t0: performance.now(),
+    blocks: 0,
   })
   if (idx === firstLikeC4Fence(tokens)) {
     const docKey = docKeyOf(env)
@@ -189,7 +207,7 @@ export function renderLikeC4Fence(tokens: Token[], idx: number, env: Env, deps: 
     ...(snap.message && snap.state === 'stale' ? { message: snap.message } : {}),
     ...(payload.trimmed ? { trimmed: true } : {}),
   }
-  return out + hostHtml(hostId, hostOpts, data, staticSnapshot(snap, viewId, hostOpts))
+  return out + hostHtml(hostId, hostOpts, data, staticSnapshot(snap, viewId, hostOpts, hostId))
 }
 
 /** Installs the fence rule; non-likec4 fences go to the previous rule untouched. */

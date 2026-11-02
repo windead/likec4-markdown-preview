@@ -184,7 +184,8 @@ export class ModelService {
             return false
           }
           const data = JSON.parse(json)
-          next = { hash, state: 'ok', viewIds: new Set(Object.keys(data.views ?? {})), data, modelJson: escapeJsonForScript(json) }
+          const modelJson = escapeJsonForScript(json)
+          next = { hash, state: 'ok', viewIds: new Set(Object.keys(data.views ?? {})), data, modelJson, modelBytes: Buffer.byteLength(modelJson) }
         } catch (e) {
           const message = `LikeC4 layout failed: ${errorMessage(e)}`
           next = prev?.data ? { ...prev, state: 'stale', message } : { hash: 'layout-error', state: 'error', message, viewIds: new Set() }

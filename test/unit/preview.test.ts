@@ -12,8 +12,13 @@ import { initialLoad, updateContent } from './vscodePreviewMorph'
 const ROOT = path.resolve('/ws')
 const shop: ProjectInfo = { name: 'shop', root: path.join(ROOT, 'shop'), kind: 'json', configPath: '', serviceRoot: ROOT }
 
+const lv = (id: string, title: string) => ({
+  id, title, hash: `${id}-${title}`, _type: 'element', bounds: { x: 0, y: 0, width: 300, height: 100 },
+  nodes: [{ id: 'a', title, x: 0, y: 0, width: 300, height: 100, children: [] }], edges: [],
+})
+
 function snap(hash: string, title = 'Customer'): ProjectSnapshot {
-  const data = { views: { index: { id: 'index', title }, checkout: { id: 'checkout' } } }
+  const data = { views: { index: lv('index', title), checkout: lv('checkout', 'Checkout') } }
   return { hash, state: 'ok', viewIds: new Set(['index', 'checkout']), data, modelJson: escapeJsonForScript(JSON.stringify(data)) }
 }
 
@@ -83,6 +88,8 @@ describe('preview host lifecycle under VS Code morphdom updates', () => {
     expect(created.every(c => !c.unmounted)).toBe(true)
     expect(manager.renders).toBe(6)
     expect((created[0]!.renders.at(-1) as any).modelHash).toBe('h2')
+    // the static snapshot (light DOM child) was updated in place, hosts kept
+    expect(hosts[0]!.querySelector('svg.likec4-static')!.textContent).toContain('Buyer')
   })
 
   it('other markdown changes do not touch hosts (no re-render)', () => {

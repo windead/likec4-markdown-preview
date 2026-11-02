@@ -38,6 +38,9 @@ async function handle(req) {
       await vscode.commands.executeCommand('workbench.action.files.revert')
       return true
     }
+    case 'browser':
+      await vscode.commands.executeCommand('simpleBrowser.api.open', vscode.Uri.parse(req.url), { viewColumn: req.column ?? vscode.ViewColumn.Beside, preserveFocus: true })
+      return true
     case 'config':
       await vscode.workspace.getConfiguration().update(req.key, req.value, vscode.ConfigurationTarget.Global)
       return true

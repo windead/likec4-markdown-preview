@@ -1,19 +1,31 @@
 // End-to-end scenarios in a real VS Code: E1–E6 (+ P1c, latency). Writes test-results/e2e/.
 // Usage: xvfb-run -a -s "-screen 0 1600x1000x24" node test/e2e/run.mjs [scenario...]
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { frameOffset, hostsInfo, launch, previewFrame, repo, sleep, waitRendered } from './lib.mjs'
 
 const out = join(repo, 'test-results/e2e')
-mkdirSync(out, { recursive: true })
 const only = process.argv.slice(2)
-const results = {}
+// a full run starts from an empty output directory; partial runs merge into results.json
+if (only.length === 0) rmSync(out, { recursive: true, force: true })
+mkdirSync(out, { recursive: true })
+const results = existsSync(join(out, 'results.json')) ? JSON.parse(readFileSync(join(out, 'results.json'), 'utf8')) : {}
 
 function makeWorkspace() {
   const ws = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'likec4-ws-'))
   cpSync(join(repo, 'fixtures'), ws, { recursive: true })
+  // extension log with epoch timestamps (Output Channel content), for latency evidence
+  process.env.LIKEC4_MDP_LOG = join(ws, 'extension.log')
+  writeFileSync(process.env.LIKEC4_MDP_LOG, '')
   return ws
+}
+
+const logLines = ws => readFileSync(join(ws, 'extension.log'), 'utf8').trim().split('\n').filter(Boolean)
+  .map(l => ({ t: Number(l.slice(0, l.indexOf(' '))), m: l.slice(l.indexOf(' ') + 1) }))
+const pct = (arr, p) => {
+  const s = [...arr].sort((a, b) => a - b)
+  return s[Math.min(s.length - 1, Math.ceil((p / 100) * s.length) - 1)]
 }
 
 const shot = (vs, name) => vs.page.screenshot({ path: join(out, `${name}.png`) })
@@ -75,9 +87,19 @@ await scenario('E1-E2-E3-E4-E5', async () => {
     await vs.do({ op: 'preview', file: md })
     let { frame, info } = await waitRendered(vs.page, { count: 4 })
     r.E1 = { firstRenderMs: Date.now() - tOpen, hosts: Object.fromEntries(Object.entries(info).map(([k, v]) => [k, { nodes: v.nodes, edges: v.edges, height: v.height, scheme: v.scheme }])) }
-    check(Object.values(info).every(v => v.nodes > 0), 'E1: all 4 views rendered')
+    check(Object.values(info).every(v => v.nodes > 0 || (!v.mounted && v.staticSvg)), 'E1: all 4 views shown')
+    r.E1.initiallyMounted = Object.values(info).filter(v => v.mounted).length
     await sleep(800)
     await shot(vs, 'E1-four-views')
+    // every view mounts when scrolled into view
+    for (const id of Object.keys(info)) {
+      await frame.evaluate(id => document.getElementById(id).scrollIntoView({ block: 'center' }), id)
+      await sleep(300)
+    }
+    ;({ frame, info } = await waitRendered(vs.page, { accept: i => Object.values(i).every(v => v.nodes > 0) }))
+    r.E1.hosts = Object.fromEntries(Object.entries(info).map(([k, v]) => [k, { nodes: v.nodes, edges: v.edges, height: v.height, scheme: v.scheme }]))
+    await frame.evaluate(() => window.scrollTo(0, 0))
+    await sleep(500)
 
     // ---- E2: zoom/pan, then edit markdown body (not the block) -> same host, viewport kept
     const first = Object.keys(info)[0]
@@ -95,83 +117,51 @@ await scenario('E1-E2-E3-E4-E5', async () => {
     check(info2[first].viewport === vp, 'E2: viewport kept')
     await shot(vs, 'E2-after-md-edit')
 
-    // ---- E3 (+P1c): unsaved .c4 edit -> forced reload, viewport restored, no blank/fit frame
+    // ---- E3: unsaved .c4 edits -> forced reload; viewport restored; latency from timestamps
     frame = f2
-    const latencies = []
-    const visibleLat = []
-    let sampleLog = []
+    const rows = []
     for (let i = 1; i <= 10; i++) {
       const vpBefore = (await hostsInfo(frame))[first].viewport
       const title = `Customer v${i}`
-      const t0 = Date.now()
+      const tEdit = Date.now()
       await vs.do({ op: 'replace', file: c4, find: i === 1 ? "'Customer'" : `'Customer v${i - 1}'`, replace: `'${title}'` })
-      // sample the *active* preview frame until the interactive diagram shows the new title
-      let done = false
-      let tVisible = null
-      const samples = []
-      while (!done && Date.now() - t0 < 10000) {
-        for (const f of vs.page.frames()) {
-          if (f.isDetached()) continue
-          const role = await f.frameElement().then(e => e.getAttribute('id')).catch(() => null)
-          if (role !== 'active-frame') continue
-          const s = await f.evaluate(id => {
-            const h = document.getElementById(id)
-            if (!h) return null
-            const inner = h.shadowRoot?.querySelector('.likec4-view')?.shadowRoot
-            const nodes = inner ? [...inner.querySelectorAll('.react-flow__node')] : []
-            const svg = h.shadowRoot ? null : h.querySelector(':scope > svg.likec4-static')
-            return { nodes: nodes.length, text: nodes.map(n => n.textContent).join('|').slice(0, 300), svgText: svg?.textContent?.slice(0, 300) ?? '', svgViewBox: svg?.getAttribute('viewBox') ?? null, vp: inner?.querySelector('.react-flow__viewport')?.style.transform ?? null }
-          }, first).catch(() => null)
-          if (!s) continue
-          const visible = s.text.includes(title) || s.svgText.includes(title)
-          if (visible && tVisible === null) tVisible = Date.now() - t0
-          samples.push({ t: Date.now() - t0, nodes: s.nodes, static: !!s.svgText, visible, vp: s.vp, svgViewBox: s.svgViewBox })
-          if (s.text.includes(title)) done = true
-        }
-        if (!done) await sleep(25)
-      }
-      visibleLat.push(tVisible ?? Infinity)
-      const latency = Date.now() - t0
-      latencies.push(latency)
-      check(done, `E3: title "${title}" appeared`)
-      frame = await previewFrame(vs.page)
-      await sleep(400)
+      const res = await waitRendered(vs.page, { accept: inf => inf[first]?.titles.some(t => t.includes(title)), timeoutMs: 15000 })
+      frame = res.frame
+      await sleep(300)
+      const page = await frame.evaluate(() => ({ origin: performance.timeOrigin, marks: window.__likec4.marks, restores: window.__likec4.restores ?? [] }))
+      const lines = logLines(ws).filter(l => l.t >= tEdit)
+      const push = lines.find(l => l.m.startsWith('[edit]'))?.t
+      const refresh = lines.find(l => l.m.startsWith('[refresh]'))?.t
+      const layout = lines.find(l => l.m.startsWith('[layout] shop'))?.t
       const vpAfter = (await hostsInfo(frame))[first].viewport
-      sampleLog.push({ i, latency, vpBefore, vpAfter, samples: samples.slice(-12) })
       check(vpAfter === vpBefore, `E3: viewport restored (${vpBefore} -> ${vpAfter})`)
+      rows.push({
+        i,
+        debounceMs: push - tEdit,
+        extensionMs: refresh - push,
+        recomputeMs: layout - push,
+        navigationMs: Math.round(page.origin - push),
+        snapshotVisibleMs: Math.round(page.origin + page.marks.snapshotsPositioned - push),
+        interactiveMs: Math.round(page.origin + page.marks.interactiveFrame - push),
+        restoreRetries: page.restores.find(r => r.hostId === first)?.retries ?? null,
+      })
       if (i === 1) await shot(vs, 'E3-after-c4-edit')
     }
-    const sorted = [...latencies].sort((a, b) => a - b)
-    const vs2 = [...visibleLat].sort((a, b) => a - b)
+    const col = k => rows.map(r => r[k])
     r.E3 = {
-      interactive: { latencies, p50: sorted[4], p95: sorted[9] },
-      visible: { latencies: visibleLat, p50: vs2[4], p95: vs2[9] },
-      note: 'from the edit (incl. 250 ms debounce) until the active preview frame shows the new title',
-      samples: sampleLog.slice(0, 3),
+      note: 'all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh',
+      rows,
+      extension: { p50: pct(col('extensionMs'), 50), p95: pct(col('extensionMs'), 95) },
+      snapshotVisible: { p50: pct(col('snapshotVisibleMs'), 50), p95: pct(col('snapshotVisibleMs'), 95) },
+      interactive: { p50: pct(col('interactiveMs'), 50), p95: pct(col('interactiveMs'), 95) },
+      restoreRetries: col('restoreRetries'),
     }
-
-    // ---- P1c: screenshot sampling around a reload for the visible first view (no blank frames)
-    const clip = await (async () => {
-      const off = await frameOffset(frame)
-      const b = await frame.evaluate(id => { const r = document.getElementById(id).getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: Math.min(r.height, 400) } }, first)
-      return { x: off.x + b.x, y: off.y + b.y, width: b.w, height: b.h }
-    })()
-    const shots = []
-    const tP = Date.now()
-    await vs.do({ op: 'replace', file: c4, find: "'Customer v10'", replace: "'Customer final'" })
-    while (Date.now() - tP < 2000) {
-      const buf = await vs.page.screenshot({ clip })
-      shots.push({ t: Date.now() - tP, buf })
-    }
-    // a "blank" frame = nearly uniform image (all diagram nodes missing); estimate via PNG size
-    const sizes = shots.map(s => s.buf.length)
-    const minSize = Math.min(...sizes), maxSize = Math.max(...sizes)
-    shots.forEach((s, i) => { if (i % 3 === 0) writeFileSync(join(out, `P1c-${String(i).padStart(2, '0')}-${s.t}ms.png`), s.buf) })
-    r.P1c = { samples: shots.length, pngSizes: sizes, minSize, maxSize, blankSuspect: minSize < maxSize * 0.5 }
+    check(r.E3.extension.p95 <= 200, `E3: extension segment P95 <= 200 ms (${r.E3.extension.p95})`)
+    check(r.E3.snapshotVisible.p95 <= 1500, `E3: snapshot visible P95 <= 1.5 s (${r.E3.snapshotVisible.p95})`)
 
     // ---- E4: syntax error -> stale notice, last view kept; fix -> notice gone
     frame = await previewFrame(vs.page)
-    await vs.do({ op: 'replace', file: c4, find: "'Customer final'", replace: "'Customer final' {{{ broken" })
+    await vs.do({ op: 'replace', file: c4, find: "'Customer v10'", replace: "'Customer final' {{{ broken" })
     let res = await waitRendered(vs.page, { accept: i => i[first].notices.some(n => n.startsWith('warning')) })
     r.E4 = { staleNotice: res.info[first].notices, nodesWhileStale: res.info[first].nodes }
     check(res.info[first].nodes > 0, 'E4: last view still rendered')
@@ -197,17 +187,90 @@ await scenario('E1-E2-E3-E4-E5', async () => {
   return r
 })
 
+// P1c: per-frame trace of the visible hosts across a forced reload (recorded in the page).
+await scenario('P1c', async () => {
+  const ws = makeWorkspace()
+  const vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxHeight': 300 } })
+  const r = {}
+  const parseT = t => { const m = t?.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([-\d.]+)\)/); return m ? { x: +m[1], y: +m[2], zoom: +m[3] } : null }
+  const parseVB = v => { const a = v?.split(' ').map(Number); return a?.length === 4 ? a : null }
+  /** Checks one host's trace: never blank; snapshot geometry == interactive geometry; no jump. */
+  function analyse(trace, id, frameSize) {
+    const frames = trace.map(f => ({ t: f.t, h: f.hosts.find(h => h.id === id) })).filter(f => f.h)
+    const blank = frames.filter(f => f.h.shows === 'nothing')
+    const snaps = frames.filter(f => f.h.shows === 'snapshot').map(f => parseVB(f.h.viewBox))
+    const inter = frames.filter(f => f.h.shows === 'interactive').map(f => parseT(f.h.transform))
+    const transforms = [...new Set(frames.filter(f => f.h.shows === 'interactive').map(f => f.h.transform))]
+    let snapshotVsInteractive = null
+    if (snaps.length && inter.length) {
+      const [vx, vy, vw] = snaps.at(-1)
+      const t = inter[0]
+      const zoom = frameSize.w / vw
+      snapshotVsInteractive = { dx: Math.abs(-vx * zoom - t.x), dy: Math.abs(-vy * zoom - t.y), dzoom: Math.abs(zoom - t.zoom) }
+    }
+    return { frames: frames.length, blankFrames: blank.length, snapshotFrames: snaps.length, interactiveFrames: inter.length, distinctInteractiveTransforms: transforms, snapshotVsInteractive }
+  }
+  try {
+    await vs.do({ op: 'preview', file: join(ws, 'docs/sample.md') })
+    let { frame, info } = await waitRendered(vs.page, { count: 4 })
+    const [idA, idB] = Object.keys(info)
+    // case A: user zoomed/panned view A; case B: view B untouched
+    await zoomPan(vs, frame, idA)
+    await frame.evaluate(() => window.scrollTo(0, 0))
+    await sleep(300)
+    const sizeOf = async (fr, id) => fr.evaluate(id => { const f = document.getElementById(id).shadowRoot.querySelector('[data-likec4-frame]').getBoundingClientRect(); return { w: f.width, h: f.height } }, id)
+    const sizeA = await sizeOf(frame, idA), sizeB = await sizeOf(frame, idB)
+    const vpA = parseT((await hostsInfo(frame))[idA].viewport)
+    await frame.evaluate(() => sessionStorage.setItem('likec4-trace', '1'))
+    const c4 = join(ws, 'shop/model.c4')
+    await vs.do({ op: 'replace', file: c4, find: "'Customer'", replace: "'Customer A'" })
+    let res = await waitRendered(vs.page, { accept: i => i[idA]?.titles.some(t => t.includes('Customer A')) && i[idB]?.nodes > 0 })
+    await sleep(4200)
+    let trace = await res.frame.evaluate(() => window.__likec4.trace)
+    r.caseA_saved = analyse(trace, idA, sizeA)
+    r.caseA_saved.expected = vpA
+    r.caseB_untouched = analyse(trace, idB, sizeB)
+    // case C: saved viewport no longer shows the view -> both snapshot and diagram fit
+    frame = res.frame
+    const docKey = await frame.evaluate(() => JSON.parse(document.getElementById('vscode-markdown-preview-data').getAttribute('data-settings')).source)
+    await frame.evaluate(([k, id]) => {
+      sessionStorage.setItem(`likec4vp|${k}|${id}`, JSON.stringify({ x: -9000, y: -9000, zoom: 1, w: 400, h: 300 }))
+      sessionStorage.setItem('likec4-trace', '1')
+    }, [docKey, idB])
+    await vs.do({ op: 'replace', file: c4, find: "'Customer A'", replace: "'Customer C'" })
+    res = await waitRendered(vs.page, { accept: i => i[idA]?.titles.some(t => t.includes('Customer C')) && i[idB]?.nodes > 0 })
+    await sleep(4200)
+    trace = await res.frame.evaluate(() => window.__likec4.trace)
+    r.caseC_outOfView = analyse(trace, idB, sizeB)
+    r.caseC_outOfView.finalTransform = (await hostsInfo(res.frame))[idB].viewport
+    for (const [k, c] of Object.entries({ A: r.caseA_saved, B: r.caseB_untouched, C: r.caseC_outOfView })) {
+      check(c.frames > 0 && c.blankFrames === 0, `P1c ${k}: no blank frame (${JSON.stringify(c)})`)
+      check(c.interactiveFrames > 0, `P1c ${k}: interactive diagram shown`)
+      check(c.distinctInteractiveTransforms.length === 1, `P1c ${k}: no jump after mount (${c.distinctInteractiveTransforms})`)
+      if (c.snapshotVsInteractive) check(c.snapshotVsInteractive.dx <= 2 && c.snapshotVsInteractive.dy <= 2 && c.snapshotVsInteractive.dzoom < 0.01, `P1c ${k}: snapshot matches diagram (${JSON.stringify(c.snapshotVsInteractive)})`)
+    }
+    const tA = parseT(r.caseA_saved.distinctInteractiveTransforms[0])
+    check(Math.abs(tA.x - vpA.x) <= 1 && Math.abs(tA.zoom - vpA.zoom) < 1e-3, 'P1c A: saved viewport restored')
+    check(!/^translate\(-9000px/.test(r.caseC_outOfView.finalTransform ?? ''), 'P1c C: unusable saved viewport replaced by fit')
+  } finally {
+    await vs.close()
+  }
+  return r
+})
+
 await scenario('E6-theme', async () => {
   const ws = makeWorkspace()
-  const vs = await launch({ workspace: ws, theme: 'Default Dark Modern' })
+  const vs = await launch({ workspace: ws, theme: 'Default Dark Modern', settings: { 'likec4MarkdownPreview.maxHeight': 250 } })
   const r = {}
   try {
     await vs.do({ op: 'preview', file: join(ws, 'docs/sample.md') })
-    let { info } = await waitRendered(vs.page, { count: 4 })
+    let { info } = await waitRendered(vs.page, { count: 4, accept: i => Object.values(i).every(v => v.nodes > 0) })
     const ids = Object.keys(info)
     const autoId = ids[0], lightId = ids[3]
     r.dark = { auto: info[autoId].scheme, light: info[lightId].scheme }
     check(r.dark.auto === 'dark' && r.dark.light === 'light', `E6 dark theme: ${JSON.stringify(r.dark)}`)
+    await sleep(400)
+    await shot(vs, 'E6-Default-Dark-Modern')
     for (const [theme, expected] of [['Default Light Modern', 'light'], ['Default High Contrast', 'dark'], ['Default High Contrast Light', 'light']]) {
       await vs.do({ op: 'config', key: 'workbench.colorTheme', value: theme })
       const res = await waitRendered(vs.page, { accept: i => i[autoId].scheme === expected, timeoutMs: 20000 })
@@ -255,6 +318,66 @@ await scenario('E9-large', async () => {
     }
     const s = [...lat].sort((a, b) => a - b)
     r.latency = { lat, p50: s[4], p95: s[9] }
+  } finally {
+    await vs.close()
+  }
+  return r
+})
+
+await scenario('E7-coexist', async () => {
+  const ws = makeWorkspace()
+  const extDir = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'likec4-ext-'))
+  cpSync(join(repo, '.vscode-test/e7-extensions'), extDir, { recursive: true })
+  const vs = await launch({ workspace: ws, extensionsDir: extDir })
+  const r = {}
+  try {
+    await vs.do({ op: 'preview', file: join(ws, 'docs/coexist.md') })
+    const { frame, info } = await waitRendered(vs.page, { count: 1 })
+    r.likec4Nodes = Object.values(info)[0].nodes
+    // mermaid renders asynchronously into an <svg>
+    let mermaidSvg = false
+    for (let i = 0; i < 40 && !mermaidSvg; i++) {
+      mermaidSvg = await frame.evaluate(() => !!document.querySelector('.mermaid svg, [class*=mermaid] svg')).catch(() => false)
+      if (!mermaidSvg) await sleep(250)
+    }
+    r.mermaidSvg = mermaidSvg
+    r.extensions = await vs.do({ op: 'extensions' })
+    // diagnostics: break the model (unsaved) -> only the official extension reports, once
+    const c4 = join(ws, 'shop/model.c4')
+    await vs.do({ op: 'open', file: c4 })
+    await sleep(4000) // official language server start
+    await vs.do({ op: 'replace', file: c4, find: "'Customer'", replace: "'Customer' {{{" })
+    let diags = []
+    for (let i = 0; i < 40; i++) {
+      diags = (await vs.do({ op: 'diagnostics' })).filter(d => d.file.endsWith(join('shop', 'model.c4')))
+      if (diags.some(d => d.count > 0)) break
+      await sleep(250)
+    }
+    r.diagnostics = diags
+    await vs.do({ op: 'preview', file: join(ws, 'docs/coexist.md') })
+    const stale = await waitRendered(vs.page, { accept: i => Object.values(i)[0].notices.some(n => n.startsWith('warning')), timeoutMs: 20000 })
+    r.staleWhileOfficialActive = Object.values(stale.info)[0].notices
+    await vs.do({ op: 'replace', file: c4, find: "'Customer' {{{", replace: "'Customer'" })
+    await sleep(1500)
+    await shot(vs, 'E7-coexist')
+    // official preview panel of the same view, for visual comparison with E1
+    try {
+      await vs.do({ op: 'command', command: 'likec4.open-preview', args: ['index', 'shop'] })
+      await sleep(5000)
+      await shot(vs, 'E7-official-preview-panel')
+      r.officialPreview = true
+    } catch (e) {
+      r.officialPreview = String(e).slice(0, 200)
+    }
+    const ours = r.extensions.find(e => e.id === 'windead.likec4-markdown-preview')
+    const official = r.extensions.find(e => e.id === 'likec4.likec4-vscode')
+    check(ours?.active, 'E7: our extension active')
+    check(official?.active, 'E7: official LikeC4 extension active')
+    check(r.likec4Nodes > 0, 'E7: LikeC4 view rendered')
+    check(r.mermaidSvg, 'E7: Mermaid diagram rendered')
+    const sources = new Set(diags.flatMap(d => d.sources))
+    check(diags.length === 1 && diags[0].count > 0, `E7: diagnostics reported once (${JSON.stringify(diags)})`)
+    r.diagnosticSources = [...sources]
   } finally {
     await vs.close()
   }

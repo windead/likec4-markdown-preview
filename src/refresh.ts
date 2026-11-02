@@ -18,7 +18,7 @@ export class RefreshScheduler {
   private readonly keys = new Set<string>()
   private reasons: string[] = []
 
-  constructor(private readonly host: RefreshHost, private readonly delayMs = 30) {}
+  constructor(private readonly host: RefreshHost, private readonly delayMs = 5) {}
 
   /** Called when the snapshots of these project keys changed. */
   projectsChanged(projectKeys: ReadonlyArray<string>, reason: string) {

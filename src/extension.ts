@@ -81,6 +81,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     resolve: (docDir, explicit) => registry.resolve(docDir ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath, explicit),
     snapshot: (p: ProjectInfo) => serviceFor(p.serviceRoot).snapshot(p.name),
     recordReferences: (docKey, projects) => references.set(docKey, new Set(projects.map(projectKey))),
+    onRendered: (docKey, blocks, ms) =>
+      log(`[render] ${docKey ? path.basename(vscode.Uri.parse(docKey).fsPath) : '(string)'}: ${blocks} likec4-view block(s) in ${ms.toFixed(1)} ms`),
   }
 
   // ---- unsaved text sync ----------------------------------------------------------------

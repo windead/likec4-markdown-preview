@@ -6,7 +6,10 @@
 import { defaultTheme } from '@likec4/core/styles'
 import { escapeHtml } from './html'
 
-/** Padding (diagram units) around the view bounds; keep in sync with preview/index.tsx PAD. */
+/** Placeholder for the host id in element ids (replaced per host, ids must be unique in the page). */
+export const ID_TOKEN = '__LIKEC4_HOST__'
+
+/** Padding (diagram units) around the view bounds; keep in sync with preview/app.tsx PAD. */
 export const PAD = 16
 export const MIN_HEIGHT = 160
 
@@ -16,6 +19,8 @@ interface RelColors { line: string; labelBg: string; label: string }
 type Any = any
 
 const FONT = "'IBM Plex Sans Variable','IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif"
+
+const attr = (v: unknown) => escapeHtml(String(v ?? ''))
 
 function colorsOf(color: string | undefined, custom: Record<string, Any> | undefined): { el: ElementColors; rel: RelColors } {
   const themed = (defaultTheme.colors as Record<string, Any>)[color ?? 'primary'] ?? custom?.[color ?? '']
@@ -72,15 +77,15 @@ function nodeShape(n: Any, c: ElementColors): string {
   const { x, y, width: w, height: h } = n
   if (n.shape === 'storage' || n.shape === 'cylinder') {
     const ry = Math.min(18, h / 6)
-    return `<path d="M${x},${y + ry} a${w / 2},${ry} 0 0,1 ${w},0 v${h - 2 * ry} a${w / 2},${ry} 0 0,1 ${-w},0 z" fill="${c.fill}" stroke="${c.stroke}"/>`
-      + `<path d="M${x},${y + ry} a${w / 2},${ry} 0 0,0 ${w},0" fill="none" stroke="${c.stroke}"/>`
+    return `<path d="M${x},${y + ry} a${w / 2},${ry} 0 0,1 ${w},0 v${h - 2 * ry} a${w / 2},${ry} 0 0,1 ${-w},0 z" fill="${attr(c.fill)}" stroke="${attr(c.stroke)}"/>`
+      + `<path d="M${x},${y + ry} a${w / 2},${ry} 0 0,0 ${w},0" fill="none" stroke="${attr(c.stroke)}"/>`
   }
   if (n.shape === 'queue') {
     const rx = Math.min(18, w / 6)
-    return `<path d="M${x + rx},${y} h${w - 2 * rx} a${rx},${h / 2} 0 0,1 0,${h} h${-(w - 2 * rx)} a${rx},${h / 2} 0 0,1 0,${-h} z" fill="${c.fill}" stroke="${c.stroke}"/>`
+    return `<path d="M${x + rx},${y} h${w - 2 * rx} a${rx},${h / 2} 0 0,1 0,${h} h${-(w - 2 * rx)} a${rx},${h / 2} 0 0,1 0,${-h} z" fill="${attr(c.fill)}" stroke="${attr(c.stroke)}"/>`
   }
   const r = n.shape === 'person' ? 12 : 6
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c.fill}" stroke="${c.stroke}"/>`
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${attr(c.fill)}" stroke="${attr(c.stroke)}"/>`
 }
 
 function leafLabel(n: Any, c: ElementColors): string {
@@ -101,7 +106,7 @@ function leafLabel(n: Any, c: ElementColors): string {
   rows.forEach((r, i) => {
     if (i === title.length && i > 0) y += 6
     y += lineH(r)
-    out += `<text x="${cx}" y="${y - r.size * 0.28}" text-anchor="middle" font-size="${r.size}" font-weight="${r.weight}" fill="${r.color}">${escapeHtml(r.s)}</text>`
+    out += `<text x="${cx}" y="${y - r.size * 0.28}" text-anchor="middle" font-size="${r.size}" font-weight="${r.weight}" fill="${attr(r.color)}">${escapeHtml(r.s)}</text>`
   })
   return out
 }
@@ -110,8 +115,8 @@ function compound(n: Any, c: ElementColors): string {
   const opacity = Math.min(1, Math.max(0, (n.style?.opacity ?? 15) / 100))
   const dash = n.style?.border === 'solid' ? '' : n.style?.border === 'none' ? '' : ' stroke-dasharray="6 4"'
   const stroke = n.style?.border === 'none' ? 'none' : c.stroke
-  return `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="8" fill="${c.fill}" fill-opacity="${opacity}" stroke="${stroke}"${dash}/>`
-    + `<text x="${n.x + 14}" y="${n.y + 22}" font-size="13" font-weight="600" letter-spacing="0.4" fill="${c.stroke}">${escapeHtml(text(n.title).toUpperCase())}</text>`
+  return `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="8" fill="${attr(c.fill)}" fill-opacity="${opacity}" stroke="${attr(stroke)}"${dash}/>`
+    + `<text x="${n.x + 14}" y="${n.y + 22}" font-size="13" font-weight="600" letter-spacing="0.4" fill="${attr(c.stroke)}">${escapeHtml(text(n.title).toUpperCase())}</text>`
 }
 
 /** Inline style of the diagram frame (same formula as the preview's interactive frame). */
@@ -146,23 +151,23 @@ export function renderStaticSvg(view: Any, variant: 'diagram' | 'sequence', maxH
   for (const e of view.edges ?? []) {
     if (!Array.isArray(e.points) || e.points.length < 2) continue
     const rc = relColors(e.color, customColors)
-    const mid = `m${rc.line.replace(/[^a-zA-Z0-9]/g, '')}`
+    const mid = `${ID_TOKEN}-m${rc.line.replace(/[^a-zA-Z0-9]/g, '')}`
     if (!markers.has(mid)) {
       markers.add(mid)
-      defs += `<marker id="${mid}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${rc.line}"/></marker>`
+      defs += `<marker id="${mid}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${attr(rc.line)}"/></marker>`
     }
     const dash = e.line === 'solid' ? '' : e.line === 'dotted' ? ' stroke-dasharray="2 4"' : ' stroke-dasharray="8 6"'
     const head = e.head === 'none' ? '' : ` marker-end="url(#${mid})"`
     const tail = e.tail && e.tail !== 'none' ? ` marker-start="url(#${mid})"` : ''
     let pts: Array<[number, number]> = e.points
     if (e.endpoint && head) pts = [...pts, e.endpoint]
-    body += `<path d="${bezierPath(pts)}" fill="none" stroke="${rc.line}" stroke-width="2"${dash}${head}${tail}/>`
+    body += `<path d="${bezierPath(pts)}" fill="none" stroke="${attr(rc.line)}" stroke-width="2"${dash}${head}${tail}/>`
     const label = text(e.label)
     if (label && e.labelBBox) {
       const lb = e.labelBBox
-      body += `<rect x="${lb.x - 2}" y="${lb.y - 1}" width="${lb.width + 4}" height="${lb.height + 2}" rx="3" fill="${rc.labelBg}" fill-opacity="0.75"/>`
-        + `<text x="${lb.x + lb.width / 2}" y="${lb.y + lb.height / 2 + 4.5}" text-anchor="middle" font-size="13" fill="${rc.label}">${escapeHtml(label.split('\n')[0]!.slice(0, 80))}</text>`
+      body += `<rect x="${lb.x - 2}" y="${lb.y - 1}" width="${lb.width + 4}" height="${lb.height + 2}" rx="3" fill="${attr(rc.labelBg)}" fill-opacity="0.75"/>`
+        + `<text x="${lb.x + lb.width / 2}" y="${lb.y + lb.height / 2 + 4.5}" text-anchor="middle" font-size="13" fill="${attr(rc.label)}">${escapeHtml(label.split('\n')[0]!.slice(0, 80))}</text>`
     }
   }
-  return `<svg class="likec4-static" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(text(view.title) || String(view.id))}" style="${frameStyle(b, maxHeight)}" font-family="${escapeHtml(FONT)}">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`
+  return `<svg class="likec4-static" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" data-bounds="${b.x} ${b.y} ${b.width} ${b.height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(text(view.title) || String(view.id))}" style="${frameStyle(b, maxHeight)}" font-family="${escapeHtml(FONT)}">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`
 }
