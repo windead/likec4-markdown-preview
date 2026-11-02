@@ -1,61 +1,101 @@
-1793642396681 [activate] VS Code 1.144.0, Node 24.22.1
-1793642397788 [render] sample.md: 4 likec4-view block(s) in 1.2 ms
-1793642397960 [projects] shop@/tmp/likec4-ws-5b1SIw/shop, billing@/tmp/likec4-ws-5b1SIw/billing, large@/tmp/likec4-ws-5b1SIw/large (1278 ms)
-1793642397967 [refresh] markdown.preview.refresh: LikeC4 projects changed
-1793642398320 [render] sample.md: 4 likec4-view block(s) in 41.9 ms
-1793642400407 [init] /tmp/likec4-ws-5b1SIw: 3 documents, projects [billing, large, shop] in 2128 ms
-1793642401017 [layout] shop: ok (changed) in 609 ms, 4 views, 15985 bytes
-1793642401041 [layout] billing: ok (changed) in 23 ms, 2 views, 3058 bytes
-1793642401050 [refresh] markdown.preview.refresh: model changed: shop, billing
-1793642401359 [render] sample.md: 4 likec4-view block(s) in 6.3 ms
-1793642407469 [render] sample.md: 4 likec4-view block(s) in 0.3 ms
-1793642409227 [edit] model.c4 v2 -> 1 service(s)
-1793642409265 [layout] shop: ok (changed) in 29 ms, 4 views, 15997 bytes
-1793642409270 [refresh] markdown.preview.refresh: model changed: shop
-1793642409572 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
-1793642410932 [edit] model.c4 v3 -> 1 service(s)
-1793642410962 [layout] shop: ok (changed) in 26 ms, 4 views, 15997 bytes
-1793642410968 [refresh] markdown.preview.refresh: model changed: shop
-1793642411273 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
-1793642412946 [edit] model.c4 v4 -> 1 service(s)
-1793642413113 [layout] shop: ok (changed) in 157 ms, 4 views, 15997 bytes
-1793642413119 [refresh] markdown.preview.refresh: model changed: shop
-1793642413423 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
-1793642415140 [edit] model.c4 v5 -> 1 service(s)
-1793642415188 [layout] shop: ok (changed) in 39 ms, 4 views, 15997 bytes
-1793642415193 [refresh] markdown.preview.refresh: model changed: shop
-1793642415496 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
-1793642417155 [edit] model.c4 v6 -> 1 service(s)
-1793642417207 [layout] shop: ok (changed) in 44 ms, 4 views, 15997 bytes
-1793642417214 [refresh] markdown.preview.refresh: model changed: shop
-1793642417519 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
-1793642419177 [edit] model.c4 v7 -> 1 service(s)
-1793642419229 [layout] shop: ok (changed) in 39 ms, 4 views, 15997 bytes
-1793642419235 [refresh] markdown.preview.refresh: model changed: shop
-1793642419538 [render] sample.md: 4 likec4-view block(s) in 1.2 ms
-1793642421298 [edit] model.c4 v8 -> 1 service(s)
-1793642421399 [layout] shop: ok (changed) in 95 ms, 4 views, 15997 bytes
-1793642421406 [refresh] markdown.preview.refresh: model changed: shop
-1793642421710 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
-1793642423335 [edit] model.c4 v9 -> 1 service(s)
-1793642423376 [layout] shop: ok (changed) in 33 ms, 4 views, 15997 bytes
-1793642423382 [refresh] markdown.preview.refresh: model changed: shop
-1793642423685 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
-1793642425251 [edit] model.c4 v10 -> 1 service(s)
-1793642425297 [layout] shop: ok (changed) in 41 ms, 4 views, 15997 bytes
-1793642425304 [refresh] markdown.preview.refresh: model changed: shop
-1793642425612 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
-1793642427058 [edit] model.c4 v11 -> 1 service(s)
-1793642427081 [layout] shop: ok (changed) in 18 ms, 4 views, 16001 bytes
-1793642427086 [refresh] markdown.preview.refresh: model changed: shop
-1793642427389 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
-1793642428568 [edit] model.c4 v12 -> 1 service(s)
-1793642429196 [layout] shop: stale (changed) in 1 ms, 4 views, 16001 bytes
-1793642429202 [refresh] markdown.preview.refresh: model changed: shop
-1793642429504 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
-1793642431567 [edit] model.c4 v13 -> 1 service(s)
-1793642431671 [layout] shop: ok (changed) in 97 ms, 4 views, 16009 bytes
-1793642431676 [refresh] markdown.preview.refresh: model changed: shop
-1793642431983 [render] sample.md: 4 likec4-view block(s) in 1.8 ms
-1793642433049 [render] sample.md: 4 likec4-view block(s) in 0.2 ms
-1793642434053 [render] sample.md: 4 likec4-view block(s) in 0.2 ms
+1793643662656 [activate] VS Code 1.144.0, Node 24.22.1
+1793643663895 [render] sample.md: 4 likec4-view block(s) in 0.9 ms
+1793643663964 [projects] large@/tmp/likec4-ws-5jxswI/large, shop@/tmp/likec4-ws-5jxswI/shop, billing@/tmp/likec4-ws-5jxswI/billing (1307 ms)
+1793643663971 [refresh] markdown.preview.refresh: LikeC4 projects changed
+1793643664314 [render] sample.md: 4 likec4-view block(s) in 33.7 ms
+1793643666105 [init] /tmp/likec4-ws-5jxswI: 3 documents, projects [billing, large, shop] in 1822 ms
+1793643666618 [layout] shop: ok (changed) in 511 ms, 4 views, 15970 bytes
+1793643666645 [layout] billing: ok (changed) in 27 ms, 2 views, 3061 bytes
+1793643666656 [refresh] markdown.preview.refresh: model changed: shop, billing
+1793643666963 [render] sample.md: 4 likec4-view block(s) in 4.2 ms
+1793643673473 [render] sample.md: 4 likec4-view block(s) in 0.3 ms
+1793643675131 [edit] model.c4 v2 -> 1 service(s)
+1793643675169 [layout] shop: ok (changed) in 29 ms, 4 views, 15982 bytes
+1793643675175 [refresh] markdown.preview.refresh: model changed: shop
+1793643675478 [render] sample.md: 4 likec4-view block(s) in 0.9 ms
+1793643678151 [edit] model.c4 v3 -> 1 service(s)
+1793643678207 [layout] shop: ok (changed) in 48 ms, 4 views, 15982 bytes
+1793643678213 [refresh] markdown.preview.refresh: model changed: shop
+1793643678516 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793643681281 [edit] model.c4 v4 -> 1 service(s)
+1793643681372 [layout] shop: ok (changed) in 86 ms, 4 views, 15982 bytes
+1793643681377 [refresh] markdown.preview.refresh: model changed: shop
+1793643681679 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793643684119 [edit] model.c4 v5 -> 1 service(s)
+1793643684186 [layout] shop: ok (changed) in 57 ms, 4 views, 15982 bytes
+1793643684191 [refresh] markdown.preview.refresh: model changed: shop
+1793643684495 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793643687367 [edit] model.c4 v6 -> 1 service(s)
+1793643687420 [layout] shop: ok (changed) in 42 ms, 4 views, 15982 bytes
+1793643687429 [refresh] markdown.preview.refresh: model changed: shop
+1793643687734 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793643690602 [edit] model.c4 v7 -> 1 service(s)
+1793643690683 [layout] shop: ok (changed) in 60 ms, 4 views, 15982 bytes
+1793643690689 [refresh] markdown.preview.refresh: model changed: shop
+1793643690992 [render] sample.md: 4 likec4-view block(s) in 0.7 ms
+1793643693554 [edit] model.c4 v8 -> 1 service(s)
+1793643693671 [layout] shop: ok (changed) in 113 ms, 4 views, 15982 bytes
+1793643693677 [refresh] markdown.preview.refresh: model changed: shop
+1793643693980 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793643696407 [edit] model.c4 v9 -> 1 service(s)
+1793643696459 [layout] shop: ok (changed) in 44 ms, 4 views, 15982 bytes
+1793643696465 [refresh] markdown.preview.refresh: model changed: shop
+1793643696769 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793643699327 [edit] model.c4 v10 -> 1 service(s)
+1793643699359 [layout] shop: ok (changed) in 28 ms, 4 views, 15982 bytes
+1793643699364 [refresh] markdown.preview.refresh: model changed: shop
+1793643699667 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793643702045 [edit] model.c4 v11 -> 1 service(s)
+1793643702098 [layout] shop: ok (changed) in 42 ms, 4 views, 15986 bytes
+1793643702104 [refresh] markdown.preview.refresh: model changed: shop
+1793643702408 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793643705170 [edit] model.c4 v12 -> 1 service(s)
+1793643705253 [layout] shop: ok (changed) in 77 ms, 4 views, 15986 bytes
+1793643705258 [refresh] markdown.preview.refresh: model changed: shop
+1793643705560 [render] sample.md: 4 likec4-view block(s) in 0.5 ms
+1793643707997 [edit] model.c4 v13 -> 1 service(s)
+1793643708048 [layout] shop: ok (changed) in 41 ms, 4 views, 15986 bytes
+1793643708054 [refresh] markdown.preview.refresh: model changed: shop
+1793643708357 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
+1793643711120 [edit] model.c4 v14 -> 1 service(s)
+1793643711152 [layout] shop: ok (changed) in 23 ms, 4 views, 15986 bytes
+1793643711157 [refresh] markdown.preview.refresh: model changed: shop
+1793643711460 [render] sample.md: 4 likec4-view block(s) in 0.8 ms
+1793643713838 [edit] model.c4 v15 -> 1 service(s)
+1793643713911 [layout] shop: ok (changed) in 61 ms, 4 views, 15986 bytes
+1793643713916 [refresh] markdown.preview.refresh: model changed: shop
+1793643714221 [render] sample.md: 4 likec4-view block(s) in 1.0 ms
+1793643717189 [edit] model.c4 v16 -> 1 service(s)
+1793643717437 [layout] shop: ok (changed) in 233 ms, 4 views, 15986 bytes
+1793643717442 [refresh] markdown.preview.refresh: model changed: shop
+1793643717745 [render] sample.md: 4 likec4-view block(s) in 0.6 ms
+1793643720164 [edit] model.c4 v17 -> 1 service(s)
+1793643720231 [layout] shop: ok (changed) in 54 ms, 4 views, 15986 bytes
+1793643720237 [refresh] markdown.preview.refresh: model changed: shop
+1793643720541 [render] sample.md: 4 likec4-view block(s) in 0.7 ms
+1793643723307 [edit] model.c4 v18 -> 1 service(s)
+1793643723364 [layout] shop: ok (changed) in 45 ms, 4 views, 15986 bytes
+1793643723369 [refresh] markdown.preview.refresh: model changed: shop
+1793643723672 [render] sample.md: 4 likec4-view block(s) in 0.3 ms
+1793643726035 [edit] model.c4 v19 -> 1 service(s)
+1793643726094 [layout] shop: ok (changed) in 49 ms, 4 views, 15986 bytes
+1793643726099 [refresh] markdown.preview.refresh: model changed: shop
+1793643726401 [render] sample.md: 4 likec4-view block(s) in 0.7 ms
+1793643729267 [edit] model.c4 v20 -> 1 service(s)
+1793643729346 [layout] shop: ok (changed) in 74 ms, 4 views, 15986 bytes
+1793643729351 [refresh] markdown.preview.refresh: model changed: shop
+1793643729653 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793643732089 [edit] model.c4 v21 -> 1 service(s)
+1793643732149 [layout] shop: ok (changed) in 47 ms, 4 views, 15986 bytes
+1793643732155 [refresh] markdown.preview.refresh: model changed: shop
+1793643732459 [render] sample.md: 4 likec4-view block(s) in 1.8 ms
+1793643735326 [edit] model.c4 v22 -> 1 service(s)
+1793643735951 [layout] shop: stale (changed) in 2 ms, 4 views, 15986 bytes
+1793643735958 [refresh] markdown.preview.refresh: model changed: shop
+1793643736259 [render] sample.md: 4 likec4-view block(s) in 0.2 ms
+1793643738324 [edit] model.c4 v23 -> 1 service(s)
+1793643738378 [layout] shop: ok (changed) in 44 ms, 4 views, 15994 bytes
+1793643738384 [refresh] markdown.preview.refresh: model changed: shop
+1793643738687 [render] sample.md: 4 likec4-view block(s) in 0.4 ms
+1793643740099 [render] sample.md: 4 likec4-view block(s) in 0.2 ms
+1793643741103 [render] sample.md: 4 likec4-view block(s) in 0.3 ms

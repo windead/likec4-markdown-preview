@@ -120,14 +120,16 @@ await scenario('E1-E2-E3-E4-E5', async () => {
     // ---- E3: unsaved .c4 edits -> forced reload; viewport restored; latency from timestamps
     frame = f2
     const rows = []
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 20; i++) {
       const vpBefore = (await hostsInfo(frame))[first].viewport
       const title = `Customer v${i}`
       const tEdit = Date.now()
       await vs.do({ op: 'replace', file: c4, find: i === 1 ? "'Customer'" : `'Customer v${i - 1}'`, replace: `'${title}'` })
       const res = await waitRendered(vs.page, { accept: inf => inf[first]?.titles.some(t => t.includes(title)), timeoutMs: 15000 })
       frame = res.frame
-      await sleep(300)
+      // let the reloaded preview finish its background work (deferred mounts) before the next edit,
+      // like a pause between edits; otherwise its CPU use competes with the next recompute
+      await sleep(1500)
       const page = await frame.evaluate(() => ({ origin: performance.timeOrigin, marks: window.__likec4.marks, restores: window.__likec4.restores ?? [] }))
       const lines = logLines(ws).filter(l => l.t >= tEdit)
       const push = lines.find(l => l.m.startsWith('[edit]'))?.t
@@ -140,6 +142,7 @@ await scenario('E1-E2-E3-E4-E5', async () => {
         debounceMs: push - tEdit,
         extensionMs: refresh - push,
         recomputeMs: layout - push,
+        ownOverheadMs: refresh - layout,
         navigationMs: Math.round(page.origin - push),
         snapshotVisibleMs: Math.round(page.origin + page.marks.snapshotsPositioned - push),
         interactiveMs: Math.round(page.origin + page.marks.interactiveFrame - push),
@@ -149,9 +152,11 @@ await scenario('E1-E2-E3-E4-E5', async () => {
     }
     const col = k => rows.map(r => r[k])
     r.E3 = {
-      note: 'all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh',
+      note: '20 edits; all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh (= LikeC4 recompute + own overhead); P95 = nearest rank',
       rows,
       extension: { p50: pct(col('extensionMs'), 50), p95: pct(col('extensionMs'), 95) },
+      recompute: { p50: pct(col('recomputeMs'), 50), p95: pct(col('recomputeMs'), 95) },
+      ownOverhead: { p50: pct(col('ownOverheadMs'), 50), p95: pct(col('ownOverheadMs'), 95) },
       snapshotVisible: { p50: pct(col('snapshotVisibleMs'), 50), p95: pct(col('snapshotVisibleMs'), 95) },
       interactive: { p50: pct(col('interactiveMs'), 50), p95: pct(col('interactiveMs'), 95) },
       restoreRetries: col('restoreRetries'),
@@ -161,7 +166,7 @@ await scenario('E1-E2-E3-E4-E5', async () => {
 
     // ---- E4: syntax error -> stale notice, last view kept; fix -> notice gone
     frame = await previewFrame(vs.page)
-    await vs.do({ op: 'replace', file: c4, find: "'Customer v10'", replace: "'Customer final' {{{ broken" })
+    await vs.do({ op: 'replace', file: c4, find: "'Customer v20'", replace: "'Customer final' {{{ broken" })
     let res = await waitRendered(vs.page, { accept: i => i[first].notices.some(n => n.startsWith('warning')) })
     r.E4 = { staleNotice: res.info[first].notices, nodesWhileStale: res.info[first].nodes }
     check(res.info[first].nodes > 0, 'E4: last view still rendered')
@@ -378,6 +383,95 @@ await scenario('E7-coexist', async () => {
     const sources = new Set(diags.flatMap(d => d.sources))
     check(diags.length === 1 && diags[0].count > 0, `E7: diagnostics reported once (${JSON.stringify(diags)})`)
     r.diagnosticSources = [...sources]
+  } finally {
+    await vs.close()
+  }
+  return r
+})
+
+// M3 features: browser=true overlay, browser=false, trimmed model, sequence variant.
+await scenario('M3-browser-sequence', async () => {
+  const ws = makeWorkspace()
+  const r = {}
+  /** Inner (LikeC4) shadow root summary of a host. */
+  const innerInfo = (fr, id) => fr.evaluate(id => {
+    const inner = document.getElementById(id)?.shadowRoot?.querySelector('.likec4-view')?.shadowRoot
+    if (!inner) return null
+    return {
+      flows: inner.querySelectorAll('.react-flow').length,
+      dialogs: inner.querySelectorAll('dialog,[role=dialog]').length,
+      seqActors: inner.querySelectorAll('.react-flow__node-seq-actor').length,
+      nodes: inner.querySelectorAll('.react-flow__node').length,
+      edges: inner.querySelectorAll('.react-flow__edge').length,
+      notices: [...document.getElementById(id).shadowRoot.querySelectorAll('[data-likec4-notice]')].map(n => n.textContent),
+    }
+  }, id)
+  /** Clicks the centre of the first node of a host (page coordinates). */
+  async function clickFirstNode(vs, fr, id) {
+    await fr.evaluate(id => document.getElementById(id).scrollIntoView({ block: 'center' }), id)
+    await sleep(700)
+    const off = await frameOffset(fr)
+    const p = await fr.evaluate(id => {
+      const inner = document.getElementById(id).shadowRoot.querySelector('.likec4-view').shadowRoot
+      const b = inner.querySelector('.react-flow__node').getBoundingClientRect()
+      return { x: b.x + b.width / 2, y: b.y + b.height / 2 }
+    }, id)
+    await vs.page.mouse.click(off.x + p.x, off.y + p.y)
+    await sleep(1500)
+  }
+  let vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxHeight': 300 } })
+  try {
+    const md = join(ws, 'docs/sample.md')
+    await vs.do({ op: 'preview', file: md })
+    let { frame, info } = await waitRendered(vs.page, { count: 4, accept: i => Object.values(i).every(v => v.nodes > 0) })
+    const ids = Object.keys(info)
+    const bodyBefore = await frame.evaluate(() => document.querySelector('.markdown-body').textContent)
+    const diskBefore = readFileSync(md, 'utf8')
+    // browser=true (index): clicking an element opens the in-diagram browser overlay
+    await clickFirstNode(vs, frame, ids[0])
+    r.browserTrue = await innerInfo(frame, ids[0])
+    await shot(vs, 'M3-browser-overlay')
+    check(r.browserTrue.flows >= 2 || r.browserTrue.dialogs >= 1, `browser=true opens the overlay (${JSON.stringify(r.browserTrue)})`)
+    const bodyAfter = await frame.evaluate(() => document.querySelector('.markdown-body').textContent)
+    r.markdownUnchanged = bodyAfter === bodyBefore && readFileSync(md, 'utf8') === diskBefore
+    check(r.markdownUnchanged, 'navigation does not change the Markdown')
+    await vs.page.keyboard.press('Escape')
+    await sleep(800)
+    // browser=false (prodDeployment): clicking does not open an overlay
+    await clickFirstNode(vs, frame, ids[2])
+    r.browserFalse = await innerInfo(frame, ids[2])
+    check(r.browserFalse.flows === 1 && r.browserFalse.dialogs === 0, `browser=false: no overlay (${JSON.stringify(r.browserFalse)})`)
+    // sequence variant (shop/docs/readme.md)
+    await vs.do({ op: 'preview', file: join(ws, 'shop/docs/readme.md') })
+    ;({ frame, info } = await waitRendered(vs.page, { count: 3, accept: i => Object.values(i)[1]?.nodes > 0 }))
+    const seqId = Object.keys(info)[1]
+    await sleep(2500)
+    ;({ frame } = await waitRendered(vs.page, { count: 3, accept: i => i[seqId]?.nodes > 0 }))
+    await frame.evaluate(id => document.getElementById(id).scrollIntoView({ block: 'center' }), seqId)
+    await sleep(1000)
+    ;({ frame } = await waitRendered(vs.page, { count: 3, accept: i => i[seqId]?.nodes > 0 }))
+    r.sequence = await innerInfo(frame, seqId)
+    await shot(vs, 'M3-sequence')
+    check(r.sequence.seqActors === 5, `sequence: 5 actors (${JSON.stringify(r.sequence)})`)
+    check(r.sequence.edges === 4, `sequence: 4 steps (${JSON.stringify(r.sequence)})`)
+  } finally {
+    await vs.close()
+  }
+  // trimmed model: above maxModelBytes the model is reduced to the referenced views, browsing disabled
+  vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxModelBytes': 65536, 'likec4MarkdownPreview.maxHeight': 300 } })
+  try {
+    await vs.do({ op: 'preview', file: join(ws, 'large/docs/architecture.md') })
+    const { frame, info } = await waitRendered(vs.page, { count: 10, accept: i => Object.values(i)[0]?.nodes > 0, timeoutMs: 90000 })
+    const id = Object.keys(info)[0]
+    r.modelBytes = await frame.evaluate(() => document.querySelector('.likec4-model script').textContent.length)
+    r.trimmedViews = await frame.evaluate(() => Object.keys(JSON.parse(document.querySelector('.likec4-model script').textContent).model.views).length)
+    r.trimmedNotice = (await innerInfo(frame, id)).notices
+    await clickFirstNode(vs, frame, id)
+    r.trimmedClick = await innerInfo(frame, id)
+    await shot(vs, 'M3-trimmed')
+    check(r.trimmedViews === 10, `trimmed model holds the 10 referenced views (${r.trimmedViews})`)
+    check(r.trimmedNotice.some(n => /too large/.test(n)), `trimmed notice shown (${r.trimmedNotice})`)
+    check(r.trimmedClick.flows === 1 && r.trimmedClick.dialogs === 0, 'trimmed: browsing disabled')
   } finally {
     await vs.close()
   }

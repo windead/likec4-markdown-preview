@@ -109,8 +109,11 @@ interface HostProps {
 function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps & { model: ModelEntry }) {
   const [saved] = useState<SavedViewport | null>(() => loadViewport(docKey, hostId))
   // a diagram mounted after an error/loading state: keep the snapshot until it is initialized
+  // without a snapshot (sequence variant) there is nothing to show meanwhile: display the diagram
+  // right away rather than an empty area
   useLayoutEffect(() => {
     if (host.querySelector(':scope > svg.likec4-static')) unmarkReady(host)
+    else markReady(host)
   }, [host])
   const cleanup = useRef<(() => void) | null>(null)
   useEffect(() => () => cleanup.current?.(), [])

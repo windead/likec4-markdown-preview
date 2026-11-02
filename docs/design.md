@@ -83,7 +83,7 @@ MarkdownItPlugin（同步，只读缓存）── HTML ────────�
 
 - **入口与懒加载**：`preview.js` 的入口很小。在 `DOMContentLoaded` 时，它先把每个静态快照的 `viewBox` 设为交互图将使用的视口：有保存的视口且仍能看到视图时用保存值，否则用 LikeC4 的初始 fit（16px 留白，缩放取 [0.05, 1]，偏移取整）。然后在 `load` 之后（最多 250 ms）才 `require` React/LikeC4 应用。webview 在新文档 `load` 时（或 200 ms 兜底）切换 frame，因此重载时先看到的就是新内容的快照。
 - 应用启动后扫描一次，之后每次 `vscode.markdown.updateContent` 再扫描一次。首次同步渲染（`flushSync`）只挂载当前可见的宿主，视口一屏范围内的宿主在下一个任务挂载，更远的由 `IntersectionObserver` 在接近时挂载；未挂载的宿主继续显示快照。已挂载的宿主不回收。
-- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。未就绪的兜底：有快照时 15 秒、无快照时（sequence 形态）3 秒后强制切换。宿主从错误/加载状态转为显示图时清除就绪标记，重新等待初始化。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
+- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。没有快照的宿主（sequence 形态）不等待，挂载后立即显示；有快照时未就绪的兜底为 15 秒。宿主从错误/加载状态转为显示图时清除就绪标记，重新等待初始化。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
 - 已有宿主：宿主 JSON、模型哈希、选项、配色都未变则跳过；否则 `root.render(新 props)`，组件不重挂载。
 - 宿主从文档消失：`unmount` 并清理。
 - 状态：`loading` 显示占位；`error` 显示错误块（不渲染图）；`stale` 渲染上次成功的模型并叠加提示条。

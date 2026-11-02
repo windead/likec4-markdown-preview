@@ -2,27 +2,27 @@
   "E1-E2-E3-E4-E5": {
     "ok": true,
     "E1": {
-      "firstRenderMs": 6989,
+      "firstRenderMs": 6844,
       "hosts": {
-        "likec4-shop-221f6a-index-1": {
+        "likec4-shop-6783ed-index-1": {
           "nodes": 3,
           "edges": 2,
           "height": 600,
           "scheme": "dark"
         },
-        "likec4-shop-221f6a-checkout-1": {
+        "likec4-shop-6783ed-checkout-1": {
           "nodes": 5,
           "edges": 4,
           "height": 160,
           "scheme": "dark"
         },
-        "likec4-shop-221f6a-prodDeployment-1": {
+        "likec4-shop-6783ed-prodDeployment-1": {
           "nodes": 5,
           "edges": 2,
           "height": 600,
           "scheme": "dark"
         },
-        "likec4-billing-221f6a-billingOverview-1": {
+        "likec4-billing-6783ed-billingOverview-1": {
           "nodes": 3,
           "edges": 1,
           "height": 600,
@@ -38,122 +38,260 @@
       "marksKept": true
     },
     "E3": {
-      "note": "all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh",
+      "note": "20 edits; all times from the overlay push (debounce excluded); extension = push -> markdown.preview.refresh (= LikeC4 recompute + own overhead); P95 = nearest rank",
       "rows": [
         {
           "i": 1,
-          "debounceMs": 345,
-          "extensionMs": 43,
+          "debounceMs": 285,
+          "extensionMs": 44,
           "recomputeMs": 38,
-          "navigationMs": 352,
-          "snapshotVisibleMs": 542,
-          "interactiveMs": 876,
+          "ownOverheadMs": 6,
+          "navigationMs": 356,
+          "snapshotVisibleMs": 561,
+          "interactiveMs": 880,
           "restoreRetries": 1
         },
         {
           "i": 2,
-          "debounceMs": 277,
-          "extensionMs": 36,
-          "recomputeMs": 30,
-          "navigationMs": 356,
-          "snapshotVisibleMs": 660,
-          "interactiveMs": 1171,
+          "debounceMs": 294,
+          "extensionMs": 62,
+          "recomputeMs": 56,
+          "ownOverheadMs": 6,
+          "navigationMs": 376,
+          "snapshotVisibleMs": 705,
+          "interactiveMs": 1186,
           "restoreRetries": 1
         },
         {
           "i": 3,
-          "debounceMs": 334,
-          "extensionMs": 173,
-          "recomputeMs": 167,
-          "navigationMs": 489,
-          "snapshotVisibleMs": 840,
-          "interactiveMs": 1376,
+          "debounceMs": 322,
+          "extensionMs": 96,
+          "recomputeMs": 91,
+          "ownOverheadMs": 5,
+          "navigationMs": 405,
+          "snapshotVisibleMs": 577,
+          "interactiveMs": 887,
           "restoreRetries": 1
         },
         {
           "i": 4,
-          "debounceMs": 325,
-          "extensionMs": 53,
-          "recomputeMs": 48,
-          "navigationMs": 369,
-          "snapshotVisibleMs": 705,
-          "interactiveMs": 1230,
+          "debounceMs": 316,
+          "extensionMs": 72,
+          "recomputeMs": 67,
+          "ownOverheadMs": 5,
+          "navigationMs": 389,
+          "snapshotVisibleMs": 697,
+          "interactiveMs": 1234,
           "restoreRetries": 1
         },
         {
           "i": 5,
-          "debounceMs": 276,
-          "extensionMs": 59,
-          "recomputeMs": 52,
-          "navigationMs": 376,
-          "snapshotVisibleMs": 716,
-          "interactiveMs": 1241,
+          "debounceMs": 317,
+          "extensionMs": 62,
+          "recomputeMs": 53,
+          "ownOverheadMs": 9,
+          "navigationMs": 378,
+          "snapshotVisibleMs": 708,
+          "interactiveMs": 1259,
           "restoreRetries": 1
         },
         {
           "i": 6,
-          "debounceMs": 290,
-          "extensionMs": 58,
-          "recomputeMs": 52,
-          "navigationMs": 375,
-          "snapshotVisibleMs": 750,
-          "interactiveMs": 1350,
+          "debounceMs": 287,
+          "extensionMs": 87,
+          "recomputeMs": 81,
+          "ownOverheadMs": 6,
+          "navigationMs": 405,
+          "snapshotVisibleMs": 704,
+          "interactiveMs": 995,
           "restoreRetries": 1
         },
         {
           "i": 7,
-          "debounceMs": 300,
-          "extensionMs": 108,
-          "recomputeMs": 101,
-          "navigationMs": 427,
-          "snapshotVisibleMs": 747,
-          "interactiveMs": 1258,
+          "debounceMs": 339,
+          "extensionMs": 123,
+          "recomputeMs": 117,
+          "ownOverheadMs": 6,
+          "navigationMs": 434,
+          "snapshotVisibleMs": 611,
+          "interactiveMs": 888,
           "restoreRetries": 1
         },
         {
           "i": 8,
-          "debounceMs": 281,
-          "extensionMs": 47,
-          "recomputeMs": 41,
-          "navigationMs": 361,
-          "snapshotVisibleMs": 680,
-          "interactiveMs": 1159,
+          "debounceMs": 346,
+          "extensionMs": 58,
+          "recomputeMs": 52,
+          "ownOverheadMs": 6,
+          "navigationMs": 374,
+          "snapshotVisibleMs": 696,
+          "interactiveMs": 1080,
           "restoreRetries": 1
         },
         {
           "i": 9,
-          "debounceMs": 256,
-          "extensionMs": 53,
-          "recomputeMs": 46,
-          "navigationMs": 371,
-          "snapshotVisibleMs": 681,
-          "interactiveMs": 1065,
+          "debounceMs": 301,
+          "extensionMs": 37,
+          "recomputeMs": 32,
+          "ownOverheadMs": 5,
+          "navigationMs": 346,
+          "snapshotVisibleMs": 510,
+          "interactiveMs": 806,
           "restoreRetries": 1
         },
         {
           "i": 10,
-          "debounceMs": 324,
-          "extensionMs": 28,
-          "recomputeMs": 23,
-          "navigationMs": 338,
-          "snapshotVisibleMs": 507,
-          "interactiveMs": 797,
+          "debounceMs": 279,
+          "extensionMs": 59,
+          "recomputeMs": 53,
+          "ownOverheadMs": 6,
+          "navigationMs": 373,
+          "snapshotVisibleMs": 676,
+          "interactiveMs": 1168,
+          "restoreRetries": 1
+        },
+        {
+          "i": 11,
+          "debounceMs": 273,
+          "extensionMs": 88,
+          "recomputeMs": 83,
+          "ownOverheadMs": 5,
+          "navigationMs": 398,
+          "snapshotVisibleMs": 559,
+          "interactiveMs": 854,
+          "restoreRetries": 1
+        },
+        {
+          "i": 12,
+          "debounceMs": 342,
+          "extensionMs": 57,
+          "recomputeMs": 51,
+          "ownOverheadMs": 6,
+          "navigationMs": 371,
+          "snapshotVisibleMs": 671,
+          "interactiveMs": 1167,
+          "restoreRetries": 1
+        },
+        {
+          "i": 13,
+          "debounceMs": 266,
+          "extensionMs": 37,
+          "recomputeMs": 32,
+          "ownOverheadMs": 5,
+          "navigationMs": 347,
+          "snapshotVisibleMs": 516,
+          "interactiveMs": 803,
+          "restoreRetries": 1
+        },
+        {
+          "i": 14,
+          "debounceMs": 292,
+          "extensionMs": 78,
+          "recomputeMs": 73,
+          "ownOverheadMs": 5,
+          "navigationMs": 400,
+          "snapshotVisibleMs": 780,
+          "interactiveMs": 1355,
+          "restoreRetries": 1
+        },
+        {
+          "i": 15,
+          "debounceMs": 281,
+          "extensionMs": 253,
+          "recomputeMs": 248,
+          "ownOverheadMs": 5,
+          "navigationMs": 567,
+          "snapshotVisibleMs": 749,
+          "interactiveMs": 1058,
+          "restoreRetries": 1
+        },
+        {
+          "i": 16,
+          "debounceMs": 289,
+          "extensionMs": 73,
+          "recomputeMs": 67,
+          "ownOverheadMs": 6,
+          "navigationMs": 388,
+          "snapshotVisibleMs": 715,
+          "interactiveMs": 1220,
+          "restoreRetries": 1
+        },
+        {
+          "i": 17,
+          "debounceMs": 257,
+          "extensionMs": 62,
+          "recomputeMs": 57,
+          "ownOverheadMs": 5,
+          "navigationMs": 372,
+          "snapshotVisibleMs": 542,
+          "interactiveMs": 832,
+          "restoreRetries": 1
+        },
+        {
+          "i": 18,
+          "debounceMs": 260,
+          "extensionMs": 64,
+          "recomputeMs": 59,
+          "ownOverheadMs": 5,
+          "navigationMs": 379,
+          "snapshotVisibleMs": 708,
+          "interactiveMs": 1189,
+          "restoreRetries": 1
+        },
+        {
+          "i": 19,
+          "debounceMs": 330,
+          "extensionMs": 84,
+          "recomputeMs": 79,
+          "ownOverheadMs": 5,
+          "navigationMs": 393,
+          "snapshotVisibleMs": 613,
+          "interactiveMs": 918,
+          "restoreRetries": 1
+        },
+        {
+          "i": 20,
+          "debounceMs": 269,
+          "extensionMs": 66,
+          "recomputeMs": 60,
+          "ownOverheadMs": 6,
+          "navigationMs": 384,
+          "snapshotVisibleMs": 703,
+          "interactiveMs": 1211,
           "restoreRetries": 1
         }
       ],
       "extension": {
-        "p50": 53,
-        "p95": 173
+        "p50": 64,
+        "p95": 123
+      },
+      "recompute": {
+        "p50": 59,
+        "p95": 117
+      },
+      "ownOverhead": {
+        "p50": 5,
+        "p95": 6
       },
       "snapshotVisible": {
-        "p50": 681,
-        "p95": 840
+        "p50": 676,
+        "p95": 749
       },
       "interactive": {
-        "p50": 1171,
-        "p95": 1376
+        "p50": 1058,
+        "p95": 1259
       },
       "restoreRetries": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
         1,
         1,
         1,
@@ -180,15 +318,15 @@
       "restoredNodes": 3
     },
     "console": [],
-    "ms": 48814
+    "ms": 88679
   },
   "P1c": {
     "ok": true,
     "caseA_saved": {
-      "frames": 204,
+      "frames": 217,
       "blankFrames": 0,
-      "snapshotFrames": 4,
-      "interactiveFrames": 200,
+      "snapshotFrames": 3,
+      "interactiveFrames": 214,
       "distinctInteractiveTransforms": [
         "translate(160px, -11px) scale(0.458849)"
       ],
@@ -204,10 +342,10 @@
       }
     },
     "caseB_untouched": {
-      "frames": 204,
+      "frames": 217,
       "blankFrames": 0,
       "snapshotFrames": 3,
-      "interactiveFrames": 201,
+      "interactiveFrames": 214,
       "distinctInteractiveTransforms": [
         "translate(16px, 34px) scale(0.196177)"
       ],
@@ -218,10 +356,10 @@
       }
     },
     "caseC_outOfView": {
-      "frames": 219,
+      "frames": 218,
       "blankFrames": 0,
       "snapshotFrames": 3,
-      "interactiveFrames": 216,
+      "interactiveFrames": 215,
       "distinctInteractiveTransforms": [
         "translate(16px, 34px) scale(0.196177)"
       ],
@@ -232,7 +370,7 @@
       },
       "finalTransform": "translate(16px, 34px) scale(0.196177)"
     },
-    "ms": 29814
+    "ms": 29297
   },
   "E6-theme": {
     "ok": true,
@@ -252,11 +390,11 @@
       "auto": "light",
       "light": "light"
     },
-    "ms": 19725
+    "ms": 20033
   },
   "E9-large": {
     "ok": true,
-    "firstScreenMs": 7999,
+    "firstScreenMs": 7498,
     "firstScreen": {
       "index-1": 13,
       "sys1View-1": 10,
@@ -283,21 +421,21 @@
     },
     "latency": {
       "lat": [
-        1595,
-        1780,
-        2131,
-        2185,
-        2845,
-        2032,
-        2201,
-        2179,
-        2121,
-        2239
+        1528,
+        1596,
+        1919,
+        2160,
+        2553,
+        2456,
+        1908,
+        2347,
+        2019,
+        2270
       ],
-      "p50": 2131,
-      "p95": 2845
+      "p50": 2019,
+      "p95": 2553
     },
-    "ms": 43245
+    "ms": 40938
   },
   "E7-coexist": {
     "ok": true,
@@ -319,7 +457,7 @@
     ],
     "diagnostics": [
       {
-        "file": "/tmp/likec4-ws-YrLwIj/shop/model.c4",
+        "file": "/tmp/likec4-ws-MdYP0O/shop/model.c4",
         "count": 1,
         "sources": [
           "likec4"
@@ -333,6 +471,50 @@
     "diagnosticSources": [
       "likec4"
     ],
-    "ms": 29298
+    "ms": 29007
+  },
+  "M3-browser-sequence": {
+    "ok": true,
+    "browserTrue": {
+      "flows": 2,
+      "dialogs": 1,
+      "seqActors": 0,
+      "nodes": 6,
+      "edges": 4,
+      "notices": []
+    },
+    "markdownUnchanged": true,
+    "browserFalse": {
+      "flows": 1,
+      "dialogs": 0,
+      "seqActors": 0,
+      "nodes": 5,
+      "edges": 2,
+      "notices": []
+    },
+    "sequence": {
+      "flows": 1,
+      "dialogs": 0,
+      "seqActors": 5,
+      "nodes": 5,
+      "edges": 4,
+      "notices": []
+    },
+    "modelBytes": 122547,
+    "trimmedViews": 10,
+    "trimmedNotice": [
+      "The LikeC4 model is too large to embed completely; navigation is disabled."
+    ],
+    "trimmedClick": {
+      "flows": 1,
+      "dialogs": 0,
+      "seqActors": 0,
+      "nodes": 13,
+      "edges": 23,
+      "notices": [
+        "The LikeC4 model is too large to embed completely; navigation is disabled."
+      ]
+    },
+    "ms": 44190
   }
 }
