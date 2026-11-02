@@ -1,0 +1,11 @@
+.markdown-body .likec4-view {
+  display: block;
+  margin: 1em 0;
+  position: relative;
+}
+.markdown-body .likec4-view > script {
+  display: none;
+}
+.markdown-body .likec4-model {
+  display: none !important;
+}

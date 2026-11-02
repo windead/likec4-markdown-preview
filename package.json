@@ -1,28 +1,128 @@
 {
   "name": "likec4-markdown-preview",
   "displayName": "Markdown Preview for LikeC4",
-  "description": "Render LikeC4 views in the built-in VS Code Markdown preview (mkdocs-likec4 compatible syntax). Not an official LikeC4 project.",
-  "version": "0.0.1",
+  "description": "Render LikeC4 views in the built-in VS Code Markdown preview, with mkdocs-likec4 compatible syntax. Not an official LikeC4 project.",
+  "version": "0.1.0",
+  "publisher": "windead",
   "license": "MIT",
   "private": true,
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.130.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "likec4",
+    "markdown",
+    "architecture",
+    "c4",
+    "diagram",
+    "preview"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "markdown.previewScripts": [
+      "./dist/preview.js"
+    ],
+    "markdown.previewStyles": [
+      "./media/preview.css"
+    ],
+    "configuration": {
+      "title": "Markdown Preview for LikeC4",
+      "properties": {
+        "likec4MarkdownPreview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Render ```likec4-view code blocks as LikeC4 diagrams. When disabled they are shown as plain code blocks."
+        },
+        "likec4MarkdownPreview.debounceMs": {
+          "type": "number",
+          "default": 250,
+          "minimum": 0,
+          "description": "Debounce time (ms) before unsaved edits of .c4 files are applied to the preview."
+        },
+        "likec4MarkdownPreview.maxHeight": {
+          "type": "number",
+          "default": 600,
+          "minimum": 100,
+          "description": "Maximum height (px) of a rendered view."
+        },
+        "likec4MarkdownPreview.graphviz": {
+          "type": "string",
+          "enum": [
+            "wasm",
+            "binary"
+          ],
+          "default": "wasm",
+          "enumDescriptions": [
+            "Bundled WebAssembly Graphviz",
+            "The `dot` binary from PATH"
+          ],
+          "description": "Layout engine."
+        },
+        "likec4MarkdownPreview.maxModelBytes": {
+          "type": "number",
+          "default": 2097152,
+          "minimum": 65536,
+          "description": "Maximum size of the model embedded per project. Larger models are trimmed to the referenced views and navigation is disabled."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --dev",
+    "watch": "node scripts/build.mjs --watch --dev",
+    "typecheck": "tsc -p .",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:integration": "node scripts/build.mjs && node test/integration/run.mjs",
+    "test:e2e": "node scripts/build.mjs && node test/e2e/run.mjs",
+    "notices": "node scripts/notices.mjs",
+    "package": "node scripts/build.mjs && node scripts/notices.mjs && vsce package --no-dependencies"
   },
   "dependencies": {
     "@likec4/core": "1.60.0",
     "@likec4/diagram": "1.60.0",
+    "@likec4/language-server": "1.60.0",
     "@likec4/language-services": "1.60.0",
+    "@likec4/layouts": "1.60.0",
+    "langium": "4.4.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "vscode-languageserver-textdocument": "1.0.15"
   },
   "devDependencies": {
+    "@eslint/js": "9.37.0",
+    "@types/jsdom": "21.1.7",
+    "@types/markdown-it": "14.1.2",
     "@types/node": "20.17.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/vscode": "1.90.0",
+    "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "3.6.0",
     "bundle-require": "5.1.0",
     "esbuild": "0.28.2",
+    "eslint": "9.37.0",
+    "jsdom": "26.1.0",
+    "markdown-it": "14.1.0",
+    "morphdom": "2.7.5",
     "playwright-core": "1.64.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.0",
+    "vitest": "3.2.4"
   }
 }

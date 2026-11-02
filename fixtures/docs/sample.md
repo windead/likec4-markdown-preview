@@ -2,22 +2,28 @@
 
 Intro paragraph.
 
-```likec4-view
+## Landscape (element view)
+
+```likec4-view project=shop
 index
 ```
 
-Shop containers:
+## Checkout (dynamic view)
 
-```likec4-view project=shop
-shopContainers
-```
-
-```likec4-view dynamic-variant=diagram
+```likec4-view project=shop dynamic-variant=diagram
 checkout
 ```
 
-```likec4-view browser=false
+## Production (deployment view)
+
+```likec4-view browser=false project=shop
 prodDeployment
+```
+
+## Billing (second project)
+
+```likec4-view project=billing color-scheme=light
+billingOverview
 ```
 
 Tail paragraph.
