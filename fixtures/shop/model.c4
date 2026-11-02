@@ -1,0 +1,84 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element container
+  element database {
+    style {
+      shape storage
+    }
+  }
+  deploymentNode environment
+  deploymentNode vm
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Buys things in the web shop'
+  }
+
+  shop = system 'Web Shop' {
+    description 'Online store'
+
+    frontend = container 'Frontend' {
+      description 'Single page application'
+      technology 'React'
+    }
+    api = container 'API' {
+      description 'Business logic'
+      technology 'Node.js'
+    }
+    db = database 'Database' {
+      technology 'PostgreSQL'
+    }
+  }
+
+  payments = system 'Payment Provider' {
+    description 'External card processing'
+  }
+
+  customer -> frontend 'uses'
+  frontend -> api 'calls'
+  api -> db 'reads and writes'
+  api -> payments 'charges cards'
+}
+
+deployment {
+  environment prod 'Production' {
+    vm web 'Web VM' {
+      instanceOf shop.frontend
+      instanceOf shop.api
+    }
+    vm data 'Data VM' {
+      instanceOf shop.db
+    }
+  }
+}
+
+views {
+  view index {
+    title 'Shop Landscape'
+    include *
+  }
+
+  view shopContainers of shop {
+    title 'Web Shop Containers'
+    include *
+  }
+
+  dynamic view checkout {
+    title 'Checkout Flow'
+    customer -> shop.frontend 'places order'
+    shop.frontend -> shop.api 'POST /orders'
+    shop.api -> payments 'charge'
+    shop.api -> shop.db 'store order'
+  }
+
+  deployment view prodDeployment {
+    title 'Production Deployment'
+    include prod.**
+  }
+}

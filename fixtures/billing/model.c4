@@ -1,0 +1,19 @@
+specification {
+  element system
+  element service
+}
+
+model {
+  billing = system 'Billing' {
+    invoicing = service 'Invoicing'
+    ledger = service 'Ledger'
+    invoicing -> ledger 'posts entries'
+  }
+}
+
+views {
+  view billingOverview of billing {
+    title 'Billing Overview'
+    include *
+  }
+}

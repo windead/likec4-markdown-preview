@@ -1,0 +1,13 @@
+{
+  "name": "likec4-md-probe",
+  "publisher": "probe",
+  "version": "0.0.0",
+  "private": true,
+  "engines": { "vscode": "^1.90.0" },
+  "main": "./dist/extension.js",
+  "activationEvents": ["onLanguage:markdown", "onStartupFinished"],
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "markdown.previewScripts": ["./dist/preview.js"]
+  }
+}

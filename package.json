@@ -1,0 +1,28 @@
+{
+  "name": "likec4-markdown-preview",
+  "displayName": "Markdown Preview for LikeC4",
+  "description": "Render LikeC4 views in the built-in VS Code Markdown preview (mkdocs-likec4 compatible syntax). Not an official LikeC4 project.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "dependencies": {
+    "@likec4/core": "1.60.0",
+    "@likec4/diagram": "1.60.0",
+    "@likec4/language-services": "1.60.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/vscode": "1.90.0",
+    "bundle-require": "5.1.0",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.64.0",
+    "typescript": "5.9.3"
+  }
+}
