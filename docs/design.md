@@ -1,8 +1,8 @@
-# 设计：Markdown Preview for LikeC4
+# Design: Markdown Preview for LikeC4
 
-在 VS Code 内置 Markdown 预览中渲染 ` ```likec4-view ` 代码块，语法与 mkdocs-likec4 兼容。本文只写最终设计。
+Renders ` ```likec4-view ` blocks in the built-in VS Code Markdown preview, with syntax compatible with mkdocs-likec4. This document describes the final design only.
 
-## 1. 语法
+## 1. Syntax
 
 ````markdown
 ```likec4-view [browser=true|false] [dynamic-variant=diagram|sequence] [project=<name>] [color-scheme=auto|light|dark]
@@ -10,141 +10,141 @@
 ```
 ````
 
-- info string 以 `likec4-view` 开头（`likec4-view` 之后须为空白或结束）；正文第一行非空内容为视图 id，其余行忽略。
-- 选项空格分隔、顺序任意、全部可选；未知选项、取值非法的选项忽略并取缺省值。
+- The info string starts with `likec4-view` (followed by whitespace or the end). The first non-empty line of the body is the view id; other lines are ignored.
+- Options are separated by spaces, in any order, all optional. Unknown options and options with invalid values are ignored and take their default.
 
-| 选项 | 缺省 | 含义 |
+| Option | Default | Meaning |
 |---|---|---|
-| `browser` | `true` | 元素详情与视图间导航（图内浮层） |
-| `dynamic-variant` | `diagram` | 动态视图形态，`sequence` 透传给 `dynamicViewVariant` |
-| `project` | 最近项目 | 多项目工作区中指定项目 |
-| `color-scheme` | `auto` | `auto` 跟随 VS Code 主题 |
+| `browser` | `true` | Element details and navigation between views (overlay inside the diagram) |
+| `dynamic-variant` | `diagram` | Display of dynamic views; `sequence` is passed through to `dynamicViewVariant` |
+| `project` | nearest project | Select a project in a multi-project workspace |
+| `color-scheme` | `auto` | `auto` follows the VS Code theme |
 
-- 视图 id 与项目名须匹配 `^[a-zA-Z][a-zA-Z0-9_-]*$`，否则直接渲染错误块，不访问模型。
-- `likec4MarkdownPreview.enabled=false` 时 `likec4-view` 交回原 fence 规则，按普通代码块渲染。
+- View ids and project names must match `^[a-zA-Z][a-zA-Z0-9_-]*$`; otherwise an error block is rendered directly, without accessing the model.
+- With `likec4MarkdownPreview.enabled=false`, `likec4-view` is passed back to the original fence rule and renders as a plain code block.
 
-## 2. 项目解析
+## 2. Project resolution
 
-- 扫描所有工作区根中的 `likec4.config.json`、`.likec4rc`、`likec4.config.{js,mjs,ts,mts}`（排除 `node_modules`）。JSON 类配置读取 `name` 为项目名、所在目录为项目根；配置文件增删改时重新扫描。
-- **JS/TS 配置不执行**：仍参与“最近项目”查找（避免误用上级项目），但渲染错误块“不支持 likec4.config.js/ts，请改用 likec4.config.json”。打包时 `bundle-require` 与 `esbuild` 以桩替换。
-- 未指定 `project`：从 Markdown 文件所在目录向上找最近的项目根（同 mkdocs-likec4 `_find_nearest_project`：路径最长的祖先项目根）。找不到时，若所在工作区根没有任何配置文件且根目录下存在 `.c4`/`.likec4` 文件，则使用该根的默认项目（项目名 `default`）；否则渲染“未找到 LikeC4 项目”。
-- 指定 `project`：在所有已发现项目中按名称匹配；不存在则渲染错误块。
-- Markdown 不在工作区内：按其所在目录向上查找配置文件（只查文件系统，不扫描）。
+- Scan all workspace roots for `likec4.config.json`, `.likec4rc` and `likec4.config.{js,mjs,ts,mts}` (excluding `node_modules`). For JSON configs, `name` is the project name and the containing folder is the project root. Rescan when config files are added, removed or changed.
+- **JS/TS configs are not executed.** They still take part in the nearest-project lookup (so a parent project is not picked by mistake), but render the error block "likec4.config.js/ts is not supported, use likec4.config.json". `bundle-require` and `esbuild` are replaced with stubs in the bundle.
+- Without `project`: walk up from the Markdown file's folder to the nearest project root (as mkdocs-likec4 `_find_nearest_project`: the ancestor project root with the longest path). If none is found and the containing workspace root has no config files and contains `.c4`/`.likec4` files at its root, use that root's default project (named `default`); otherwise render "No LikeC4 project found".
+- With `project`: match by name among all discovered projects; if there is none, render an error block.
+- Markdown outside the workspace: walk up from its folder looking for config files (file system lookups only, no scan).
 
-## 3. 架构
+## 3. Architecture
 
 ```
-扩展宿主                                               内置 Markdown 预览 webview
-ProjectRegistry ── 发现项目、最近项目                    preview.js（previewScripts，IIFE）
-ModelService（每个 LikeC4 工作区根一个，惰性）            · 扫描 .likec4-view 宿主
-  · 公开 API 组装 Langium 服务 + new LikeC4(services)   · attachShadow + createRoot（首次）
-  · 磁盘：WithFileSystem(watch=true)                    · hash 变化 → root.render(新 props)
-  · 未保存：TextDocuments.set/delete + DocumentBuilder   · 视口按「文档 + 宿主 id」存 sessionStorage
-  · onModelUpdate → 重算被引用项目 → 比较哈希           · 宿主消失 → unmount
-  · 缓存 project → {hash, state, model JSON}
-RefreshScheduler → 仅当受影响文档有打开的预览时
-                   执行一次 markdown.preview.refresh
-MarkdownItPlugin（同步，只读缓存）── HTML ──────────▶
+Extension host                                          Built-in Markdown preview webview
+ProjectRegistry ── project discovery, nearest project    preview.js (previewScripts, IIFE)
+ModelService (one per LikeC4 workspace root, lazy)       · scan .likec4-view hosts
+  · Langium services from public APIs + new LikeC4()     · attachShadow + createRoot (first time)
+  · disk: WithFileSystem(watch=true)                     · hash changed → root.render(new props)
+  · unsaved: TextDocuments.set/delete + DocumentBuilder  · viewport in sessionStorage, keyed by
+  · onModelUpdate → recompute used projects → hash         document + host id
+  · cache project → {hash, state, model JSON}            · host removed → unmount
+RefreshScheduler → runs markdown.preview.refresh once,
+                   only when an affected document has an open preview
+MarkdownItPlugin (synchronous, cache only) ── HTML ──▶
 ```
 
-### 3.1 扩展宿主
+### 3.1 Extension host
 
-- 激活：`onLanguage:markdown`。
-- **ModelService**：以 LikeC4 工作区根（含该项目的 VS Code 工作区根，或工作区外 Markdown 的项目根）为单位创建，首次被渲染引用时惰性创建。用公开 API 组装：`createLanguageServices({...WithFileSystem(true), ...WithLikeC4ManualLayouts, ...WithWasmGraphviz | WithGraphviz(new GraphvizBinaryAdapter())})`，`WorkspaceManager.initialize/initialized`，`new LikeC4(services)`。不继承 `LikeC4`、不访问 `protected` 成员。
-- **未保存编辑**：监听 `.c4`/`.likec4` 文档的 `onDidChangeTextDocument`，按 `debounceMs` 防抖后 `TextDocuments.set(TextDocument.create(uri, 'likec4', version, text))` + `DocumentBuilder.update([uri], [])`；文档关闭时 `TextDocuments.delete(uri)` + `update`，回退磁盘内容。
-- **重算**：`onModelUpdate(projectId)` 后，若该项目被某个已渲染文档引用，则计算布局后模型：`layoutedModel(project)`；若项目 `hasErrors()`（该项目文档存在错误级诊断）则不更新缓存，状态置 `stale`（保留上次成功结果，附首条错误）。同一 ModelService 内重算串行，新请求到来时丢弃排队中的旧请求。
-- **哈希**：对模型 JSON 计算 SHA-1。哈希不变不触发刷新。
-- **刷新**：`markdown.preview.refresh` 会强制重载所有 Markdown 预览，因此只有当“受影响项目被某个当前打开预览的文档引用”时才执行，并合并为一次（同一事件循环内多项目变化只刷新一次）。“文档 → 项目”的引用关系由 markdown-it 渲染时记录；“当前打开的预览”由 `window.tabGroups` 中 `TabInputWebview`（`viewType` 含 `markdown.preview`）与可见文档推断，推断失败时按“引用该项目的文档仍打开”处理。
-- **加载中**：缓存未就绪时 markdown-it 输出 `loading` 占位，ModelService 就绪后按上述规则刷新。
-- **日志**：Output Channel “LikeC4 Markdown Preview”，记录项目初始化、每次重算耗时、哈希是否变化、刷新原因；不输出文件内容。
+- Activation: `onLanguage:markdown`.
+- **ModelService**: one per LikeC4 workspace root (the VS Code workspace root containing the project, or the project root for Markdown outside the workspace), created lazily when first referenced by a render. Assembled from public APIs: `createLanguageServices({...WithFileSystem(true), ...WithLikeC4ManualLayouts, ...WithWasmGraphviz | WithGraphviz(new GraphvizBinaryAdapter())})`, `WorkspaceManager.initialize/initialized`, `new LikeC4(services)`. It does not subclass `LikeC4` or access `protected` members.
+- **Unsaved edits**: listen to `onDidChangeTextDocument` for `.c4`/`.likec4` documents; after the `debounceMs` debounce, `TextDocuments.set(TextDocument.create(uri, 'likec4', version, text))` + `DocumentBuilder.update([uri], [])`. When the document is closed, `TextDocuments.delete(uri)` + `update` falls back to the disk contents.
+- **Recomputation**: after `onModelUpdate(projectId)`, if the project is referenced by a rendered document, compute the layouted model with `layoutedModel(project)`. If the project `hasErrors()` (error-level diagnostics in its documents), the cache is not updated and the state becomes `stale` (last good result kept, with the first error). Recomputations within one ModelService run serially; a new request drops queued older ones.
+- **Hash**: SHA-1 of the model JSON. An unchanged hash triggers no refresh.
+- **Refresh**: `markdown.preview.refresh` force-reloads every Markdown preview, so it only runs when an affected project is referenced by a document that currently has an open preview, merged into one call (changes in several projects in the same event loop refresh once). The "document → project" references are recorded during markdown-it rendering; "currently open previews" are inferred from `TabInputWebview` tabs in `window.tabGroups` (`viewType` contains `markdown.preview`) and visible documents. If that inference fails, the rule falls back to "a document referencing the project is still open".
+- **Loading**: while the cache is not ready, markdown-it outputs a `loading` placeholder; when the ModelService is ready, a refresh follows the rules above.
+- **Log**: Output Channel "LikeC4 Markdown Preview" records project initialization, the duration of each recomputation, whether the hash changed, and refresh reasons. File contents are never logged.
 
-### 3.2 HTML 输出
+### 3.2 HTML output
 
-每个文档、每个被引用项目输出一份模型（id 稳定），每个代码块输出一个宿主：
+Each document gets one model per referenced project (stable id), and each block gets one host:
 
 ```html
 <div class="likec4-model" id="likec4-model-<project>-<rootTag>" hidden><script type="application/json">{"hash":"…","trimmed":false,"model":{…LikeC4Model.Layouted $data…}}</script></div>
 <div class="likec4-view" id="likec4-<project>-<rootTag>-<viewId>-<n>" data-likec4-opts='{"project":"…","viewId":"…","model":"likec4-model-…","browser":true,"variant":"diagram","scheme":"auto","maxHeight":600}'>
   <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","message":"…","trimmed":false}</script>
-  <svg class="likec4-static" viewBox="…" data-bounds="x y w h" …>…静态快照…</svg>
+  <svg class="likec4-static" viewBox="…" data-bounds="x y w h" …>…static snapshot…</svg>
 </div>
 ```
 
-- 模型脚本紧跟在该项目首个宿主之前输出（同一文档只输出一次）。id 放在外层 `<div>` 上：内置预览加载内容与 morphdom 新增节点时会以 `domEval` 重建 `<script>`，只保留 `type`/`src`/`nonce` 等属性，`<script>` 自身的 `id`/`class` 会丢失。
-- `<rootTag>` 为 ModelService 根路径 SHA-1 的前 6 位，区分不同根中同名项目；宿主 id 同样包含 `<project>-<rootTag>`。
-- `<n>` 为同一 `<project>-<viewId>` 在文档中的出现序号，使 morphdom 按 id 匹配同一元素。宿主属性只放选项；数据只在 `<script>` 文本中。
-- 宿主 JSON 的 `hash` = 模型哈希 + 视图状态，`view` 不重复内联。
-- JSON 内联前将 `<`、`>`、`&`、U+2028、U+2029 转义为 `\uXXXX`。
-- **静态快照**：`ok`/`stale` 宿主的 light DOM 含一份由扩展宿主按布局数据生成的 SVG（节点、复合节点、连线、标签，颜色取 LikeC4 默认主题，缓存键为视图哈希 + 形态 + 最大高度）。快照内的元素 id 带宿主 id 前缀，保证页面内唯一。`dynamic-variant=sequence` 不生成快照。快照只是占位，不追求与交互图逐像素一致；颜色与 LikeC4 一致，亮/暗主题下相同。
-- stale 与模型被裁剪的提示条也在服务端输出到快照之前（`.likec4-notice`），与交互图中的提示一致，交接时内容不下移。
-- **体积上限**：转义后模型的 UTF-8 字节数超过 `maxModelBytes`（缺省 2 MiB）时，把模型的 `views` 裁剪为本文档引用的视图，宿主强制 `browser=false` 并显示提示；文档中全部宿主为 `browser=false` 时也只内联裁剪后的模型。
+- The model script is emitted right before the first host of its project (once per document). The id is on the outer `<div>`: when the built-in preview loads content and when morphdom adds nodes, `domEval` recreates `<script>` elements keeping only `type`/`src`/`nonce` and similar attributes, so an `id`/`class` on the `<script>` itself would be lost.
+- `<rootTag>` is the first 6 hex digits of the SHA-1 of the ModelService root path, distinguishing same-named projects in different roots; host ids include `<project>-<rootTag>` as well.
+- `<n>` is the occurrence number of the same `<project>-<viewId>` in the document, so morphdom matches the same element by id. Host attributes hold only options; data appears only in the `<script>` text.
+- The host JSON `hash` = model hash + view state; the view itself is not inlined again.
+- Before inlining, `<`, `>`, `&`, U+2028 and U+2029 in the JSON are escaped as `\uXXXX`.
+- **Static snapshot**: the light DOM of `ok`/`stale` hosts contains an SVG generated by the extension host from the layout data (nodes, compound nodes, edges, labels; colors from the default LikeC4 theme; cache key is view hash + variant + max height). Element ids in the snapshot are prefixed with the host id, so they are unique in the page. No snapshot is generated for `dynamic-variant=sequence`. The snapshot is only a placeholder and is not meant to match the interactive diagram pixel for pixel; colors match LikeC4 and are the same in light and dark themes.
+- Notices for stale and trimmed models are also emitted server-side, before the snapshot (`.likec4-notice`), matching the notice in the interactive diagram, so content does not shift down at handover.
+- **Size limit**: when the UTF-8 size of the escaped model exceeds `maxModelBytes` (default 2 MiB), the model's `views` are trimmed to the views referenced by this document, hosts are forced to `browser=false` and show a notice. When every host in the document is `browser=false`, only the trimmed model is inlined as well.
 
-### 3.3 预览端
+### 3.3 Preview
 
-- **入口与懒加载**：`preview.js` 的入口很小。在 `DOMContentLoaded` 时，它先把每个静态快照的 `viewBox` 设为交互图将使用的视口：有保存的视口且仍能看到视图时用保存值，否则用 LikeC4 的初始 fit（16px 留白，缩放取 [0.05, 1]，偏移取整）。然后在 `load` 之后（最多 250 ms）才 `require` React/LikeC4 应用。webview 在新文档 `load` 时（或 200 ms 兜底）切换 frame，因此重载时先看到的就是新内容的快照。
-- 应用启动后扫描一次，之后每次 `vscode.markdown.updateContent` 再扫描一次。首次同步渲染（`flushSync`）只挂载当前可见的宿主，视口一屏范围内的宿主在下一个任务挂载，更远的由 `IntersectionObserver` 在接近时挂载；未挂载的宿主继续显示快照。已挂载的宿主不回收。
-- 新宿主：`attachShadow({mode:'open'})`，shadow 内依次为样式、隐藏的绘图容器、默认 `<slot>`（继续显示 light DOM 中的快照）。`createRoot` 渲染 `LikeC4ModelProvider` + `LikeC4View`（`LikeC4View` 内部再建一层 shadow root、注入 LikeC4 样式、把 Mantine 变量挂在 shadow 内）。图完成初始化与视口恢复后，给容器打上就绪标记，切换为显示图、隐藏 slot。就绪标记在 shadow 内，不受 morphdom 影响。没有快照的宿主（sequence 形态）不等待，挂载后立即显示；有快照时未就绪的兜底为 15 秒。宿主从错误/加载状态转为显示图时清除就绪标记，重新等待初始化。同一项目的 `LikeC4Model.create` 结果按模型哈希缓存，多宿主共享。
-- 已有宿主：宿主 JSON、模型哈希、选项、配色都未变则跳过；否则 `root.render(新 props)`，组件不重挂载。
-- 宿主从文档消失：`unmount` 并清理。
-- 状态：`loading` 显示占位；`error` 显示错误块（不渲染图）；`stale` 渲染上次成功的模型并叠加提示条。
-- 主题：`color-scheme=auto` 读 `document.body` 的 `vscode-light`/`vscode-dark`/`vscode-high-contrast` 类，`MutationObserver` 监听变化；`light`/`dark` 固定。
-- 尺寸：图框宽 `min(100%, 视图宽 + 32px)`，按布局边界（`pickViewBounds(view, variant)`）保持宽高比，`max-height` 为 `maxHeight`，`min-height` 为 160px，水平居中。快照使用同一公式（服务端内联样式），`LikeC4View` 关闭自身的 `keepAspectRatio`，填满图框。
-- 交互：滚轮滚动 Markdown 页面（不被图捕获，与 mkdocs-likec4 的使用习惯一致）；Ctrl/⌘ + 滚轮或触控板捏合缩放；拖拽平移；`browser=true` 时点击元素打开图内浏览浮层。实现为 `reactFlowProps={zoomOnScroll:false, panOnScroll:false, preventScrolling:false}`。
-- 视口：以「文档 URI + 宿主 id」为键存 `sessionStorage`，在宿主上以捕获阶段监听交互事件（React Flow 会阻止冒泡），限流写入，并记录图框尺寸。只保留当前文档的键。图始终以 `fitView=true` 初始化（`fitView=false` 时 LikeC4 的平移和缩放不工作），保存的视口若仍能看到视图，就在 `onInitialized` 中通过 `diagram.send({type:'xyflow.setViewport'})` 恢复，并发送 `xyflow.viewportMoved(manually)`，避免之后容器尺寸变化时再次自动 fit。morphdom 路径下组件不重挂载，视口自然保持。
-- 打包：IIFE；`define` `process.env.NODE_ENV`、`import.meta.env.DEV`、`import.meta.env.MODE`。无 `eval`、不插入 `<script>`、无网络请求。
-- 测试辅助：`sessionStorage['likec4-trace']='1'` 时，入口在加载后约 4 秒内逐帧记录可见宿主显示的内容（快照、图、空白）及其视口。记录从 `DOMContentLoaded` 开始，此前（webview 已切换但内容尚未追加）的帧无法在页内观测。
+- **Entry and lazy loading**: the `preview.js` entry is small. On `DOMContentLoaded` it first sets each static snapshot's `viewBox` to the viewport the interactive diagram will use: the saved viewport if there is one and the view is still visible in it, otherwise LikeC4's initial fit (16px padding, zoom in [0.05, 1], offsets rounded). It then `require`s the React/LikeC4 app after `load` (at most 250 ms). The webview swaps frames on the new document's `load` (or after a 200 ms fallback), so during a reload the first thing shown is the snapshot of the new content.
+- After start-up the app scans once, then again after each `vscode.markdown.updateContent`. The first synchronous render (`flushSync`) mounts only hosts currently visible; hosts within one viewport height are mounted in the next task, and further ones by an `IntersectionObserver` as they come near. Unmounted hosts keep showing their snapshot. Mounted hosts are not recycled.
+- New host: `attachShadow({mode:'open'})`; the shadow root contains, in order, styles, a hidden diagram container and a default `<slot>` (which keeps showing the snapshot from the light DOM). `createRoot` renders `LikeC4ModelProvider` + `LikeC4View` (`LikeC4View` creates another shadow root inside, injects the LikeC4 styles and puts the Mantine variables inside that shadow root). Once the diagram has initialized and restored its viewport, the container gets a ready flag and the diagram is shown instead of the slot. The ready flag lives inside the shadow root, out of morphdom's reach. Hosts without a snapshot (sequence variant) do not wait and are shown as soon as they mount; with a snapshot, the fallback for a host that never becomes ready is 15 seconds. When a host goes from error/loading to showing a diagram, its ready flag is cleared and it waits for initialization again. `LikeC4Model.create` results are cached per model hash and shared by hosts of the same project.
+- Existing host: skipped when the host JSON, model hash, options and color scheme are unchanged; otherwise `root.render(new props)` without remounting.
+- Host removed from the document: `unmount` and clean up.
+- States: `loading` shows a placeholder; `error` shows an error block (no diagram); `stale` renders the last good model with a notice on top.
+- Theme: `color-scheme=auto` reads the `vscode-light`/`vscode-dark`/`vscode-high-contrast` classes on `document.body` and watches them with a `MutationObserver`; `light`/`dark` are fixed.
+- Size: the diagram frame is `min(100%, view width + 32px)` wide, keeps the aspect ratio of the layout bounds (`pickViewBounds(view, variant)`), has `max-height` = `maxHeight` and `min-height` = 160px, and is centered. The snapshot uses the same formula (inline style from the server); `LikeC4View` has its own `keepAspectRatio` turned off and fills the frame.
+- Interaction: the mouse wheel scrolls the Markdown page (not captured by diagrams, matching how mkdocs-likec4 pages behave); Ctrl/⌘ + wheel or pinch zooms; drag pans; with `browser=true`, clicking an element opens the in-diagram browser overlay. Implemented as `reactFlowProps={zoomOnScroll:false, panOnScroll:false, preventScrolling:false}`.
+- Viewport: stored in `sessionStorage` keyed by "document URI + host id". Interaction events are listened to in the capture phase on the host (React Flow stops propagation), writes are throttled, and the frame size is recorded. Only keys of the current document are kept. The diagram always initializes with `fitView=true` (with `fitView=false`, LikeC4 pan and zoom do not work). If the saved viewport still shows the view, it is restored in `onInitialized` through `diagram.send({type:'xyflow.setViewport'})`, followed by `xyflow.viewportMoved(manually)` so later container size changes do not fit again. On the morphdom path components are not remounted, so the viewport is kept naturally.
+- Bundle: IIFE; `define` for `process.env.NODE_ENV`, `import.meta.env.DEV`, `import.meta.env.MODE`. No `eval`, no inserted `<script>`, no network requests.
+- Test aid: with `sessionStorage['likec4-trace']='1'`, the entry records, frame by frame for about 4 seconds after loading, what each visible host shows (snapshot, diagram, blank) and its viewport. Recording starts at `DOMContentLoaded`; frames before that (webview already swapped but content not yet appended) cannot be observed from inside the page.
 
-### 3.4 更新链路与已知限制
+### 3.4 Update paths and known limitations
 
-| 变化 | 链路 | 效果 |
+| Change | Path | Effect |
 |---|---|---|
-| 编辑 Markdown 正文或代码块 | 内置预览非强制刷新 → morphdom | 宿主、shadow root、React 状态、视口全部保留 |
-| 编辑 `.c4`（含未保存） | 防抖 → 重算 → 哈希变化 → `markdown.preview.refresh`（整页重载） | 新文档先显示按保存视口定位的快照，交互图就绪后无跳变替换；视口从 sessionStorage 恢复 |
-| `.c4` 出现错误 | 不更新缓存，`stale` | 保留上次结果并提示 |
+| Edit Markdown text or a block | Built-in preview non-forced update → morphdom | Hosts, shadow roots, React state and viewports all kept |
+| Edit a `.c4` (including unsaved) | Debounce → recompute → hash changed → `markdown.preview.refresh` (full reload) | The new document first shows snapshots positioned at the saved viewport; the interactive diagram replaces them without a jump once ready; viewport restored from sessionStorage |
+| `.c4` has errors | Cache not updated, `stale` | Last result kept with a notice |
 
-已知限制：
-- `.c4` 变化会重载所有打开的、引用了受影响项目的 Markdown 预览；浏览浮层、选中、动态视图步进等瞬时状态在重载后丢失。
-- 重载链路受 VS Code 预览 300 ms 节流和新文档加载约束，交互图就绪约需 1.2–1.4 s（不含防抖），在此之前显示快照。
-- 大模型首次全模型布局为一次性开销（`fixtures/large` 约 550 ms），之后的增量重算 P95 约 290 ms。
+Known limitations:
+- A `.c4` change reloads every open Markdown preview that references an affected project. Transient state such as the browser overlay, the selection and dynamic-view stepping is lost after the reload.
+- The reload path is bound by the VS Code preview's 300 ms throttle and loading of the new document; the interactive diagram is ready after about 1.2–1.4 s (excluding debounce), with the snapshot shown until then.
+- For large models, the first full-model layout is a one-off cost (about 550 ms for `fixtures/large`); later incremental recomputations have a P95 of about 290 ms.
 
-### 3.5 日志
+### 3.5 Log
 
-Output Channel “LikeC4 Markdown Preview” 记录：`[projects]` 项目发现，`[init]` 工作区初始化耗时，`[edit]` 推送未保存文本，`[layout]` 每次重算的状态、是否变化、耗时、视图数与体积，`[refresh]` 刷新原因，`[render]` markdown-it 渲染的块数与耗时。不输出文件内容。
+Output Channel "LikeC4 Markdown Preview" records: `[projects]` project discovery, `[init]` workspace initialization time, `[edit]` unsaved text pushed, `[layout]` state, change, duration, view count and size of each recomputation, `[refresh]` refresh reasons, `[render]` number of blocks and duration of markdown-it rendering. File contents are never logged.
 
-## 4. 设置项
+## 4. Settings
 
-| 键 | 类型 | 缺省 | 说明 |
+| Key | Type | Default | Description |
 |---|---|---|---|
-| `likec4MarkdownPreview.enabled` | boolean | `true` | 关闭后按普通代码块渲染 |
-| `likec4MarkdownPreview.debounceMs` | number | `250` | 未保存编辑的防抖时间 |
-| `likec4MarkdownPreview.maxHeight` | number | `600` | 视图最大高度（px） |
-| `likec4MarkdownPreview.graphviz` | `wasm`/`binary` | `wasm` | 布局引擎 |
-| `likec4MarkdownPreview.maxModelBytes` | number | `2097152` | 单项目内联模型上限，超出时裁剪并禁用 browser |
+| `likec4MarkdownPreview.enabled` | boolean | `true` | When off, blocks render as plain code blocks |
+| `likec4MarkdownPreview.debounceMs` | number | `250` | Debounce for unsaved edits |
+| `likec4MarkdownPreview.maxHeight` | number | `600` | Maximum view height (px) |
+| `likec4MarkdownPreview.graphviz` | `wasm`/`binary` | `wasm` | Layout engine |
+| `likec4MarkdownPreview.maxModelBytes` | number | `2097152` | Maximum inlined model size per project; beyond it the model is trimmed and browser is disabled |
 
-## 5. 范围与兼容
+## 5. Scope and compatibility
 
-- 只读；不注册 LSP 客户端，不提供诊断与补全，与官方 LikeC4 扩展互不干扰。
-- 清单声明 `capabilities.untrustedWorkspaces: { supported: true }`（不执行工作区代码）。
-- 不包含：定位源码（`command:` URI 在预览中不放行，待后续评估 `vscode://` URI 方案）、Notebook、第三方预览、导出 HTML/PDF。
-- `engines.vscode`：`^1.123.0`。取 1.63（morphdom 预览）与“桌面扩展宿主内置 Node 满足所有打包依赖 `engines.node`（`@likec4/language-server@1.60.0` 要求 ≥22.22.3）”的最早版本中的较大者：1.122 为 Electron 39.8.8 / Node 22.22.1（不满足），1.123 为 Electron 42.3.0 / Node 24.15.0。已在 VS Code 1.123.0 与 1.144.0 上运行集成测试。
+- Read-only. No LSP client, no diagnostics and no completion, so it does not interfere with the official LikeC4 extension.
+- The manifest declares `capabilities.untrustedWorkspaces: { supported: true }` (no workspace code is executed).
+- Not included: go to source (`command:` URIs are not allowed in the preview; a `vscode://` URI approach may be evaluated later), notebooks, third-party previews, HTML/PDF export.
+- `engines.vscode`: `^1.123.0`. This is the later of 1.63 (morphdom preview) and the earliest version whose desktop extension host Node satisfies the `engines.node` of every bundled dependency (`@likec4/language-server@1.60.0` requires ≥22.22.3): 1.122 ships Electron 39.8.8 / Node 22.22.1 (not enough), 1.123 ships Electron 42.3.0 / Node 24.15.0. Integration tests were run on VS Code 1.123.0 and 1.144.0.
 
-## 6. 验收口径调整（相对任务书 7.2）
+## 6. Acceptance adjustments (relative to section 7.2 of the brief)
 
-- E3：任务书的 P95 < 1 s 受 VS Code 强制重载链路的下限约束；ADVISOR 裁定不阻塞，改用替代门槛（均不含防抖，从推送未保存文本起算）：扩展可控段（推送 → 发起 refresh）P95 ≤ 200 ms；新内容可见（快照就位）P95 ≤ 1.5 s；交互图可用只报告数值。另需视口保持，并以页内逐帧记录（P1c）证明三种情况下（已保存视口、未触碰视图、保存的视口已看不到视图）可见宿主没有空白帧，也没有先 fit 再跳回。
-- E9：本机无 `ci-metrics`，以 `fixtures/large`（脚本生成的大模型）上的 10 视图文档替代；7.3 第二个模型同此。
+- E3: the brief's P95 < 1 s is bounded below by VS Code's forced reload path. ADVISOR ruled this non-blocking and set replacement thresholds (all excluding debounce, measured from pushing the unsaved text): extension-controlled segment (push → refresh issued) P95 ≤ 200 ms; new content visible (snapshot in place) P95 ≤ 1.5 s; interactive diagram ready is reported only. The viewport must also be kept, and an in-page per-frame trace (P1c) must show that in three cases (saved viewport, untouched view, saved viewport no longer showing the view) visible hosts have no blank frame and no fit-then-jump-back.
+- E9: `ci-metrics` is not available on this machine, so a 10-view document on `fixtures/large` (a generated large model) is used instead; the same applies to the second model in 7.3.
 
-## 7. ADVISOR 裁定清单
+## 7. ADVISOR rulings
 
-| 事项 | 裁定 |
+| Item | Ruling |
 |---|---|
-| `.c4` 变化的更新方式 | 强制刷新 + 视口持久化（方案 A）；仅受影响且打开的预览才刷新 |
-| `browser=true` 模型数据 | 每文档每项目内联一份布局后模型；上限 2 MiB（设置项），超限裁剪视图并禁用 browser，单一渲染路径 |
-| `sequence` | 首版支持，透传 |
-| `protected langium` | 不用；公开 API 组装服务 |
-| 定位源码 | 不纳入首版 |
-| `engines.vscode` | 依赖声明的 Node 版本决定下限，实测扩展宿主 Node |
-| JS/TS 配置 | 不执行，桩替换 `bundle-require`/`esbuild`，渲染错误块 |
-| 静态快照 + 懒加载入口 | 接受（消除强制重载期间的空白帧）；sequence 形态无快照 |
-| 屏幕外宿主延迟挂载 | 接受；已挂载宿主不回收 |
-| 大模型的全模型重算 | 接受（增量重算 P95 287 ms < 500 ms）；拿到真实大模型后复测 |
-| E3 延迟 | 不阻塞，采用 §6 的替代门槛，列入已知限制 |
+| Updating on `.c4` changes | Forced refresh + viewport persistence (option A); refresh only previews that are affected and open |
+| Model data for `browser=true` | One layouted model inlined per document per project; limit 2 MiB (setting); beyond it, trim views and disable browser; a single rendering path |
+| `sequence` | Supported in the first version, passed through |
+| `protected langium` | Not used; services assembled from public APIs |
+| Go to source | Not in the first version |
+| `engines.vscode` | Floor set by the Node version the dependencies declare, measured in the extension host |
+| JS/TS configs | Not executed; `bundle-require`/`esbuild` stubbed; error block |
+| Static snapshot + lazy entry | Accepted (removes blank frames during forced reloads); no snapshot for the sequence variant |
+| Deferred mounting of off-screen hosts | Accepted; mounted hosts are not recycled |
+| Full-model recomputation for large models | Accepted (incremental recomputation P95 287 ms < 500 ms); re-measure with a real large model |
+| E3 latency | Non-blocking; replacement thresholds in §6; listed as a known limitation |
