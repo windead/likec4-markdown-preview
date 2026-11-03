@@ -61,9 +61,10 @@ type FenceResolution =
   | { kind: 'ok'; opts: FenceOptions; viewId: string; project: ProjectInfo }
 
 function resolveFence(token: Token, env: Env, deps: RenderDeps): FenceResolution {
-  const opts = parseFenceOptions(token.info)
-  const viewId = parseViewId(token.content)
-  if (!viewId) return { kind: 'error', message: 'Missing view id in likec4-view block.', opts, viewId }
+  const opts = parseFenceOptions(token.info, deps.colorScheme())
+  const parsed = parseViewId(token.content)
+  if (!parsed.ok) return { kind: 'error', message: parsed.message, opts, viewId: '' }
+  const viewId = parsed.viewId
   if (!NAME_RE.test(viewId)) return { kind: 'error', message: `Invalid view id "${viewId}".`, opts, viewId }
   if (opts.project !== undefined && !NAME_RE.test(opts.project)) {
     return { kind: 'error', message: `Invalid project name "${opts.project}".`, opts, viewId }
@@ -77,7 +78,7 @@ function resolveFence(token: Token, env: Env, deps: RenderDeps): FenceResolution
 function planDocument(tokens: Token[], env: Env, deps: RenderDeps): Map<string, Planned> {
   const plan = new Map<string, Planned>()
   for (const t of tokens) {
-    if (t.type !== 'fence' || !isLikeC4Fence(t.info)) continue
+    if (t.type !== 'fence' || !isLikeC4Fence(t.info, t.markup)) continue
     const r = resolveFence(t, env, deps)
     if (r.kind !== 'ok') continue
     const key = projectKey(r.project)
@@ -102,7 +103,7 @@ function modelPayload(snap: ProjectSnapshot, planned: Planned, maxBytes: number)
 }
 
 function firstLikeC4Fence(tokens: Token[]): number {
-  return tokens.findIndex(t => t.type === 'fence' && isLikeC4Fence(t.info))
+  return tokens.findIndex(t => t.type === 'fence' && isLikeC4Fence(t.info, t.markup))
 }
 
 function hostHtml(id: string, opts: HostOptions | null, data: HostData, fallback = ''): string {
@@ -139,7 +140,7 @@ export function renderLikeC4Fence(tokens: Token[], idx: number, env: Env, deps: 
 }
 
 function lastLikeC4Fence(tokens: Token[]): number {
-  for (let i = tokens.length - 1; i >= 0; i--) if (tokens[i]!.type === 'fence' && isLikeC4Fence(tokens[i]!.info)) return i
+  for (let i = tokens.length - 1; i >= 0; i--) if (tokens[i]!.type === 'fence' && isLikeC4Fence(tokens[i]!.info, tokens[i]!.markup)) return i
   return -1
 }
 
@@ -180,6 +181,7 @@ function renderFence(tokens: Token[], idx: number, env: Env, deps: RenderDeps): 
     variant: opts.variant,
     scheme: opts.scheme,
     maxHeight: deps.maxHeight(),
+    panZoom: deps.panZoom(),
   }
   if (!snap) return hostHtml(hostId, hostOpts, { hash: 'loading', state: 'loading' })
   if (snap.state === 'error' || !snap.data) {
@@ -218,7 +220,7 @@ export function likec4MarkdownIt(md: MarkdownIt, deps: RenderDeps): MarkdownIt {
   const original = md.renderer.rules.fence
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const token = tokens[idx]!
-    if (deps.enabled() && isLikeC4Fence(token.info)) {
+    if (deps.enabled() && isLikeC4Fence(token.info, token.markup)) {
       return renderLikeC4Fence(tokens, idx, env as Env, deps)
     }
     return original ? original(tokens, idx, options, env, self) : self.renderToken(tokens, idx, options)

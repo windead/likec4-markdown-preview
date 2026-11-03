@@ -2,6 +2,7 @@ import { appendFileSync } from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import type MarkdownIt from 'markdown-it'
+import type { ColorScheme } from './fence'
 import { likec4MarkdownIt, projectKey } from './markdownIt'
 import { ModelService } from './modelService'
 import { isWithin, norm, type ProjectInfo } from './projects'
@@ -12,6 +13,10 @@ import type { RenderDeps } from './types'
 const SECTION = 'likec4MarkdownPreview'
 const LIKEC4_EXT = /\.(c4|likec4)$/i
 
+function toScheme(v: string | undefined): ColorScheme {
+  return v === 'light' || v === 'dark' ? v : 'auto'
+}
+
 function config() {
   const c = vscode.workspace.getConfiguration(SECTION)
   return {
@@ -20,6 +25,8 @@ function config() {
     maxHeight: Math.max(100, c.get<number>('maxHeight', 600)),
     graphviz: c.get<'wasm' | 'binary'>('graphviz', 'wasm') === 'binary' ? 'binary' as const : 'wasm' as const,
     maxModelBytes: Math.max(64 * 1024, c.get<number>('maxModelBytes', 2 * 1024 * 1024)),
+    colorScheme: toScheme(c.get<string>('colorScheme', 'auto')),
+    panZoom: c.get<boolean>('panZoom', false),
   }
 }
 
@@ -78,6 +85,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     enabled: () => cfg.enabled,
     maxModelBytes: () => cfg.maxModelBytes,
     maxHeight: () => cfg.maxHeight,
+    colorScheme: () => cfg.colorScheme,
+    panZoom: () => cfg.panZoom,
     resolve: (docDir, explicit) => registry.resolve(docDir ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath, explicit),
     snapshot: (p: ProjectInfo) => serviceFor(p.serviceRoot).snapshot(p.name),
     recordReferences: (docKey, projects) => references.set(docKey, new Set(projects.map(projectKey))),

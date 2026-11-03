@@ -97,6 +97,14 @@ export function resolveProject(
     if (near) return checkKind(near)
     const def = projects.find(p => p.kind === 'default' && isWithin(docDir, p.root))
     if (def) return { ok: true, project: def }
+    // like an MkDocs build from the workspace root: a single project is used for every page,
+    // with several the block has to name one
+    const inRoot = projects.filter(p => p.kind !== 'default' && isWithin(docDir, p.serviceRoot))
+    if (inRoot.length === 1) return checkKind(inRoot[0]!)
+    if (inRoot.length > 1) {
+      const known = [...new Set(inRoot.map(p => p.name).filter(Boolean))].sort().join(', ')
+      return { ok: false, message: `This document is not inside a LikeC4 project; specify one with project=<name> (known: ${known}).` }
+    }
   } else {
     const named = projects.filter(p => p.kind !== 'default')
     if (named.length === 1) return checkKind(named[0]!)

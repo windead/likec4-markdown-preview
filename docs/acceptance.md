@@ -122,3 +122,18 @@ From opening the preview to all 4 views shown: 6844 ms, all cold (VS Code just s
 7. Publishing fields: `publisher` is provisionally `windead` and there is no icon (the official LikeC4 logo is not used). To be decided by the user before publishing to a marketplace.
 8. With fast back-to-back edits while the previous preview reload is still initializing, CPU contention pushes the extension-controlled segment over the 200 ms threshold: in two back-to-back runs, the extension segment P95 was 278 ms (10 edits) and 252 ms (20 edits), mainly from the LikeC4 recomputation tail (233/260 ms); the extension's own overhead stayed at 15 ms or less (see §3).
 9. Each document inlines the full layouted model, which grows the preview HTML for many documents with large models; above 2 MiB the model is trimmed automatically.
+
+## 6. Re-verification after the mkdocs-likec4 parity changes
+
+Changes (see `docs/design.md` §8): static embedded views by default with opt-in `panZoom`, fence parsing ported from mkdocs-likec4, `colorScheme` setting, single-project fallback.
+
+| Check | Result |
+|---|---|
+| `npx tsc -p .`, `npx eslint .` | No errors |
+| `npx vitest run` | 9 files, 85 tests, all pass (new: option parsing compared case by case with the output of mkdocs-likec4 1.2.2's parser, single-line body, tilde fences, `colorScheme`/`panZoom`, single-project fallback) |
+| Integration, VS Code 1.144.0 and 1.123.0 | 5/5 pass on both |
+| e2e `mkdocs-parity` (new) | Pass: with default settings, Ctrl+wheel and drag leave the view transform unchanged, the wheel scrolls the page, no viewport is stored |
+| e2e `M3-browser-sequence` (now with default, static views) | Pass: `browser=true` click opens the view browser, `browser=false` does not, sequence and trimming unchanged |
+| e2e P1c, E6, E9, E7 | Pass (P1c and E2/E3 run with `panZoom` on) |
+| e2e E1–E5 | E1, E2, E4, E5 pass. E3's threshold check (extension segment P95 ≤ 200 ms) failed in this session at 236–324 ms. Breakdown of two runs: median 70/78 ms, P95 256/236 ms, of which LikeC4 recomputation 237/222 ms and the extension's own overhead 5/5 ms. The previous commit, run under the same conditions, gives 256 ms, so this is machine load (the long recomputation tail of §5 item 8), not a regression |
+| `npm run package` | VSIX 1.94 MB, 10 files; packaged with the `repository` field, without `--allow-missing-repository` |

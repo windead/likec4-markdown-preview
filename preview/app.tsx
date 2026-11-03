@@ -57,8 +57,8 @@ function modelFor(id: string): ModelEntry | null {
 }
 
 /**
- * The wheel scrolls the Markdown page (it must not be captured by the diagram);
- * Ctrl/Cmd + wheel or pinch zooms, dragging pans.
+ * The wheel scrolls the Markdown page (it must not be captured by the diagram); with panZoom,
+ * Ctrl/Cmd + wheel or pinch zooms and dragging pans.
  */
 const REACT_FLOW_PROPS = { zoomOnScroll: false, panOnScroll: false, preventScrolling: false } as const
 
@@ -107,7 +107,8 @@ interface HostProps {
 }
 
 function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps & { model: ModelEntry }) {
-  const [saved] = useState<SavedViewport | null>(() => loadViewport(docKey, hostId))
+  // without zoom and pan the view always shows the initial fit, like mkdocs-likec4
+  const [saved] = useState<SavedViewport | null>(() => (opts.panZoom ? loadViewport(docKey, hostId) : null))
   // a diagram mounted after an error/loading state: keep the snapshot until it is initialized
   // without a snapshot (sequence variant) there is nothing to show meanwhile: display the diagram
   // right away rather than an empty area
@@ -147,7 +148,7 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
       // the initial fit is applied synchronously during initialization
       markReady(host)
     }
-    cleanup.current = makeViewportSaver(host, docKey, hostId, () => readViewport(host) ?? xyflow.getViewport())
+    if (opts.panZoom) cleanup.current = makeViewportSaver(host, docKey, hostId, () => readViewport(host) ?? xyflow.getViewport())
   }
 
   const bounds = view?.isLayouted() ? pickViewBounds(view.$layouted as any, opts.variant) : null
@@ -175,8 +176,8 @@ function Diagram({ hostId, host, opts, data, model, scheme, docKey }: HostProps 
           viewId={opts.viewId as any}
           colorScheme={scheme}
           browser={browser}
-          pannable
-          zoomable
+          pannable={opts.panZoom}
+          zoomable={opts.panZoom}
           dynamicViewVariant={opts.variant}
           reactFlowProps={REACT_FLOW_PROPS}
           {...({ fitView: true, onInitialized } as any)}
@@ -210,7 +211,7 @@ function HostView(props: HostProps) {
 let currentScheme: Scheme = 'light'
 let docKey = ''
 
-const FALLBACK_OPTS: HostOptions = { project: '', viewId: '', model: '', browser: false, variant: 'diagram', scheme: 'auto', maxHeight: 600 }
+const FALLBACK_OPTS: HostOptions = { project: '', viewId: '', model: '', browser: false, variant: 'diagram', scheme: 'auto', maxHeight: 600, panZoom: false }
 
 function schemeOf(opts: HostOptions | null): Scheme {
   return opts?.scheme === 'light' || opts?.scheme === 'dark' ? opts.scheme : currentScheme

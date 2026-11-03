@@ -85,6 +85,22 @@
           "default": 2097152,
           "minimum": 65536,
           "description": "Maximum size of the model embedded per project. Larger models are trimmed to the referenced views and navigation is disabled."
+        },
+        "likec4MarkdownPreview.colorScheme": {
+          "type": "string",
+          "enum": ["auto", "light", "dark"],
+          "default": "auto",
+          "enumDescriptions": [
+            "Follow the VS Code color theme.",
+            "Always light.",
+            "Always dark."
+          ],
+          "description": "Default color scheme of views whose block sets no color-scheme option (like the color_scheme option of mkdocs-likec4)."
+        },
+        "likec4MarkdownPreview.panZoom": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Allow zooming (Ctrl/Cmd + wheel, pinch) and panning (drag) inside embedded views. Off by default, so views behave as in mkdocs-likec4: a static diagram that opens the view browser on click (`browser=true`)."
         }
       }
     }

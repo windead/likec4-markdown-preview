@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Type check
+        run: npx tsc -p .
+      - name: Lint
+        run: npx eslint .
+      - name: Unit tests
+        run: npx vitest run
+      - name: Build
+        run: npm run build
+      - name: Integration tests (VS Code 1.144.0)
+        run: xvfb-run -a node test/integration/run.mjs
+      - name: Integration tests (VS Code 1.123.0, minimum version)
+        run: xvfb-run -a node test/integration/run.mjs
+        env:
+          VSCODE_VERSION: 1.123.0

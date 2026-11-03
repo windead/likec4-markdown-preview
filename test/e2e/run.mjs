@@ -78,7 +78,8 @@ async function scenario(name, fn) {
 
 await scenario('E1-E2-E3-E4-E5', async () => {
   const ws = makeWorkspace()
-  const vs = await launch({ workspace: ws })
+  // E2/E3 check that zoom and pan survive updates, so they need the opt-in pan/zoom setting
+  const vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.panZoom': true } })
   const r = {}
   try {
     const md = join(ws, 'docs/sample.md')
@@ -195,7 +196,7 @@ await scenario('E1-E2-E3-E4-E5', async () => {
 // P1c: per-frame trace of the visible hosts across a forced reload (recorded in the page).
 await scenario('P1c', async () => {
   const ws = makeWorkspace()
-  const vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxHeight': 300 } })
+  const vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxHeight': 300, 'likec4MarkdownPreview.panZoom': true } })
   const r = {}
   const parseT = t => { const m = t?.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([-\d.]+)\)/); return m ? { x: +m[1], y: +m[2], zoom: +m[3] } : null }
   const parseVB = v => { const a = v?.split(' ').map(Number); return a?.length === 4 ? a : null }
@@ -472,6 +473,49 @@ await scenario('M3-browser-sequence', async () => {
     check(r.trimmedViews === 10, `trimmed model holds the 10 referenced views (${r.trimmedViews})`)
     check(r.trimmedNotice.some(n => /too large/.test(n)), `trimmed notice shown (${r.trimmedNotice})`)
     check(r.trimmedClick.flows === 1 && r.trimmedClick.dialogs === 0, 'trimmed: browsing disabled')
+  } finally {
+    await vs.close()
+  }
+  return r
+})
+
+await scenario('mkdocs-parity', async () => {
+  // default settings: embedded views behave like the mkdocs-likec4 web component
+  // (static diagram, the wheel scrolls the page, Ctrl+wheel and drag do nothing)
+  const ws = makeWorkspace()
+  const r = {}
+  const vs = await launch({ workspace: ws, settings: { 'likec4MarkdownPreview.maxHeight': 300 } })
+  try {
+    await vs.do({ op: 'preview', file: join(ws, 'docs/sample.md') })
+    let { frame, info } = await waitRendered(vs.page, { count: 4, accept: i => Object.values(i).every(v => v.nodes > 0) })
+    const ids = Object.keys(info)
+    const transform = id => frame.evaluate(id => document.getElementById(id).shadowRoot.querySelector('.likec4-view').shadowRoot.querySelector('.react-flow__viewport').style.transform, id)
+    const scrollY = () => frame.evaluate(() => window.scrollY)
+    await frame.evaluate(id => document.getElementById(id).scrollIntoView({ block: 'center' }), ids[2])
+    await sleep(700)
+    const off = await frameOffset(frame)
+    const b = await frame.evaluate(id => { const x = document.getElementById(id).getBoundingClientRect(); return { x: x.x, y: x.y, w: x.width, h: x.height } }, ids[2])
+    const cx = off.x + b.x + b.w / 2, cy = off.y + b.y + b.h / 2
+    const before = { transform: await transform(ids[2]), scrollY: await scrollY() }
+    await vs.page.mouse.move(cx, cy)
+    await vs.page.keyboard.down('Control')
+    await vs.page.mouse.wheel(0, -250)
+    await vs.page.keyboard.up('Control')
+    await sleep(500)
+    await vs.page.mouse.down()
+    await vs.page.mouse.move(cx + 80, cy + 40, { steps: 8 })
+    await vs.page.mouse.up()
+    await sleep(500)
+    const afterZoomPan = await transform(ids[2])
+    await vs.page.mouse.move(cx, cy)
+    await vs.page.mouse.wheel(0, 200)
+    await sleep(700)
+    r.static = { before, afterZoomPan, scrollYAfterWheel: await scrollY() }
+    check(afterZoomPan === before.transform, `Ctrl+wheel and drag do not move a static view (${before.transform} → ${afterZoomPan})`)
+    check(r.static.scrollYAfterWheel > before.scrollY, `the wheel scrolls the page (${before.scrollY} → ${r.static.scrollYAfterWheel})`)
+    r.savedViewports = await frame.evaluate(() => Object.keys(sessionStorage).filter(k => k.startsWith('likec4vp|')).length)
+    check(r.savedViewports === 0, 'no viewport is saved for static views')
+    await shot(vs, 'mkdocs-parity')
   } finally {
     await vs.close()
   }

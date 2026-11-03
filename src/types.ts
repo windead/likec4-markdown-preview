@@ -1,3 +1,4 @@
+import type { ColorScheme } from './fence'
 import type { ProjectInfo, Resolution } from './projects'
 
 export type HostState = 'ok' | 'loading' | 'error' | 'stale'
@@ -43,12 +44,18 @@ export interface HostOptions {
   variant: 'diagram' | 'sequence'
   scheme: 'auto' | 'light' | 'dark'
   maxHeight: number
+  /** Zoom and pan inside the embedded diagram (off: static view, as in mkdocs-likec4). */
+  panZoom: boolean
 }
 
 export interface RenderDeps {
   enabled(): boolean
   maxModelBytes(): number
   maxHeight(): number
+  /** Default color scheme for blocks without a valid `color-scheme` option. */
+  colorScheme(): ColorScheme
+  /** Whether embedded diagrams can be zoomed and panned. */
+  panZoom(): boolean
   /** Resolves the project for a document directory; 'pending' while discovery is still running. */
   resolve(docDir: string | undefined, explicit: string | undefined): Resolution | 'pending'
   /** Returns the cached snapshot (undefined while loading) and makes sure it gets computed. */

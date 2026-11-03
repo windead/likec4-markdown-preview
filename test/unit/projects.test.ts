@@ -44,8 +44,14 @@ describe('resolveProject', () => {
     expect(resolveProject(path.join(r2, 'shop/docs'), 'shop', [shop, other])).toEqual({ ok: true, project: other })
     expect(resolveProject(path.join(r2, 'shop/docs'), undefined, [shop, other])).toEqual({ ok: true, project: other })
   })
-  it('no project found', () => {
-    expect(resolveProject(path.join(R, 'docs'), undefined, all).ok).toBe(false)
+  it('outside every project: several projects in the root need project=', () => {
+    const r = resolveProject(path.join(R, 'docs'), undefined, all)
+    expect(r).toEqual({ ok: false, message: 'This document is not inside a LikeC4 project; specify one with project=<name> (known: billing, nested, shop).' })
+  })
+  it('outside every project: the only project of the root is used, as in an MkDocs build', () => {
+    expect(resolveProject(path.join(R, 'docs'), undefined, [shop])).toEqual({ ok: true, project: shop })
+    // a project of another workspace root does not count
+    expect(resolveProject(path.resolve('/other/docs'), undefined, [shop]).ok).toBe(false)
   })
   it('default project when the root has no config', () => {
     const def = p('default', '.', 'default')

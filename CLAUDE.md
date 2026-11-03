@@ -20,7 +20,7 @@ npx tsc -p .                  # type check (esbuild does not type check)
 npx eslint .
 npx vitest run                # unit tests; single: npx vitest run test/unit/markdownIt.test.ts -t "keyword"
 xvfb-run -a node test/integration/run.mjs                      # @vscode/test-electron, VS Code 1.144 (VSCODE_VERSION=1.123.0 tests the floor)
-xvfb-run -a -s "-screen 0 1600x1000x24" node test/e2e/run.mjs  # Playwright drives a real VS Code; scenario names: E1-E2-E3-E4-E5 P1c E6-theme E9-large E7-coexist M3-browser-sequence
+xvfb-run -a -s "-screen 0 1600x1000x24" node test/e2e/run.mjs  # Playwright drives a real VS Code; scenario names: E1-E2-E3-E4-E5 P1c E6-theme E9-large E7-coexist M3-browser-sequence mkdocs-parity
 node scripts/notices.mjs      # generate THIRD_PARTY_NOTICES from dist/meta.json (build first)
 npm run package               # build + notices + vsce package
 ```
@@ -35,7 +35,7 @@ The two sides communicate one way through **JSON inlined in the HTML**; the prev
 **Extension host (Node)**
 - Note: `markdown.preview.refresh` is a **forced full page reload** (probe P1), so there is no morphdom path when only a `.c4` changes. To cover this, the host's light DOM contains a server-generated static SVG snapshot (`src/staticSvg.ts`); the preview entry (`preview/index.ts`) positions snapshots at the saved viewport, then lazily loads the app (`preview/app.tsx`); the diagram initializes hidden inside the shadow root and replaces the snapshot shown through `<slot>` only when ready. Details in `docs/design.md` §3.3.
 - `src/markdownIt.ts`: synchronous markdown-it fence rule; handles only blocks whose info string starts with `likec4-view` and passes everything else to the original rule (must chain with other fence-rewriting plugins). **The rule only reads the cache**, no I/O or layout; while the cache is not ready it outputs a `state: "loading"` placeholder and a refresh follows when ready.
-- `src/fence.ts`: info string option parsing (mirrors mkdocs-likec4's parser).
+- `src/fence.ts`: fence detection and option parsing, ported from mkdocs-likec4's `parser.py` (single-line body, backtick fences, same regexes); keep it in step with mkdocs-likec4.
 - `src/projects.ts`: scans each workspace root for `likec4.config.json` / `.likec4rc` / `likec4.config.{js,ts}`; walks up from the Markdown folder to the nearest project (as mkdocs-likec4 `_find_nearest_project`), falling back to the default project (no config, `.c4` in the root).
 - `src/modelService.ts`: one instance per LikeC4 workspace root, created lazily. It does not subclass `LikeC4`; it assembles services from public `@likec4/language-server` modules and calls `new LikeC4(services)`. Disk changes come from `WithFileSystem(true)` (chokidar); unsaved edits are debounced, then `TextDocuments.set` + `DocumentBuilder.update`; on close/save, `delete` falls back to disk. After `onModelUpdate` it **recomputes only projects referenced by a render** (`layoutedModel`) and detects changes by hashing canonical JSON (sorted keys; `$data` key order is unstable). Recomputations are serialized and merged. When the model has errors (decided by `hasErrors`-style diagnostics, since Langium still produces a model), the last good result is kept with state `stale`.
 - `src/refresh.ts` + `src/extension.ts`: `markdown.preview.refresh` reloads **all** previews, so it is called only when an affected project is referenced by a still-open document and a Markdown preview is open (5 ms merge window).
@@ -43,7 +43,7 @@ The two sides communicate one way through **JSON inlined in the HTML**; the prev
 **Preview webview (`preview/` → `preview.js`, injected through `markdown.previewScripts`)**
 - `preview/index.ts` (small entry) → `preview/app.tsx` (React + `LikeC4ModelProvider` + `LikeC4View`, lazily `require`d); `preview/hosts.ts` manages host lifecycle (unit-testable, no React), `preview/viewport.ts` handles viewport persistence (`sessionStorage`, key = document URI + host id) and snapshot positioning.
 - Existing hosts: skipped when hash/options/color scheme are unchanged, otherwise `root.render(new props)` (no remount); hosts that disappear are `unmount`ed; off-screen hosts mount later.
-- The diagram always initializes with `fitView=true` (with `fitView=false`, LikeC4 pan/zoom break); the viewport is restored in `onInitialized` with `diagram.send({type:'xyflow.setViewport'})`; interaction is listened to in the **capture phase** on the host (React Flow stops propagation). The wheel scrolls the page; Ctrl/⌘+wheel zooms.
+- The diagram always initializes with `fitView=true` (with `fitView=false`, LikeC4 pan/zoom break); the viewport is restored in `onInitialized` with `diagram.send({type:'xyflow.setViewport'})`; interaction is listened to in the **capture phase** on the host (React Flow stops propagation). By default views are static like in mkdocs-likec4 (click opens the view browser); the `panZoom` setting enables zoom/pan and viewport persistence. The wheel always scrolls the page.
 - The bundle must `define` `import.meta.env.DEV/MODE` (`@likec4/diagram` has Vite-style references; without them the second render crashes).
 
 **Host element contract (the core of flicker-free updates; understand it before changing anything)**

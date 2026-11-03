@@ -132,6 +132,14 @@ export function fitViewport(b: { x: number; y: number; width: number; height: nu
  * Positions each static snapshot exactly like the interactive diagram will be:
  * at the saved viewport when it still shows the view, otherwise at LikeC4's fit view.
  */
+function panZoomOf(host: Element): boolean {
+  try {
+    return JSON.parse(host.getAttribute('data-likec4-opts') ?? '{}').panZoom === true
+  } catch {
+    return false
+  }
+}
+
 export function positionSnapshots(docKey: string) {
   for (const host of Array.from(document.querySelectorAll('.likec4-view'))) {
     const svg = host.querySelector(':scope > svg.likec4-static')
@@ -139,7 +147,7 @@ export function positionSnapshots(docKey: string) {
     const bounds = snapshotBounds(svg)
     const r = svg.getBoundingClientRect()
     if (!bounds || !(r.width > 0 && r.height > 0)) continue
-    const saved = loadViewport(docKey, host.id)
+    const saved = panZoomOf(host) ? loadViewport(docKey, host.id) : null
     const v = saved && isViewportUsable({ ...saved, w: r.width, h: r.height }, bounds) ? saved : fitViewport(bounds, r.width, r.height)
     svg.setAttribute('viewBox', `${-v.x / v.zoom} ${-v.y / v.zoom} ${r.width / v.zoom} ${r.height / v.zoom}`)
   }

@@ -10,15 +10,17 @@ Renders ` ```likec4-view ` blocks in the built-in VS Code Markdown preview, with
 ```
 ````
 
-- The info string starts with `likec4-view` (followed by whitespace or the end). The first non-empty line of the body is the view id; other lines are ignored.
-- Options are separated by spaces, in any order, all optional. Unknown options and options with invalid values are ignored and take their default.
+- Fence handling follows mkdocs-likec4 1.2 (`parser.py`), so a block renders in VS Code exactly when it renders in MkDocs:
+  - The fence uses backticks and its info string starts with `likec4-view` (followed by whitespace or the end). `~~~` fences are left to the original rule (plain code block), as MkDocs does not transform them.
+  - The body is exactly one line, the view id (trimmed). Other bodies are not transformed by MkDocs; here they render an error block saying so.
+  - Options are found with the same regular expressions (`\bbrowser=(true|false)\b`, `\bdynamic-variant=(diagram|sequence)\b`, `\bproject=(\S+)\b`, `\bcolor-scheme=(auto|light|dark)\b`) searched in the rest of the info string: any order, all optional, case-sensitive, first match wins; unknown options and invalid values are ignored and take their default. Unit tests compare against the output of mkdocs-likec4's own parser.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `browser` | `true` | Element details and navigation between views (overlay inside the diagram) |
+| `browser` | `true` | Clicking the view opens the view browser overlay (element details, navigation); `false`: not interactive |
 | `dynamic-variant` | `diagram` | Display of dynamic views; `sequence` is passed through to `dynamicViewVariant` |
 | `project` | nearest project | Select a project in a multi-project workspace |
-| `color-scheme` | `auto` | `auto` follows the VS Code theme |
+| `color-scheme` | setting `colorScheme` (`auto`) | `auto` follows the VS Code theme |
 
 - View ids and project names must match `^[a-zA-Z][a-zA-Z0-9_-]*$`; otherwise an error block is rendered directly, without accessing the model.
 - With `likec4MarkdownPreview.enabled=false`, `likec4-view` is passed back to the original fence rule and renders as a plain code block.
@@ -28,6 +30,7 @@ Renders ` ```likec4-view ` blocks in the built-in VS Code Markdown preview, with
 - Scan all workspace roots for `likec4.config.json`, `.likec4rc` and `likec4.config.{js,mjs,ts,mts}` (excluding `node_modules`). For JSON configs, `name` is the project name and the containing folder is the project root. Rescan when config files are added, removed or changed.
 - **JS/TS configs are not executed.** They still take part in the nearest-project lookup (so a parent project is not picked by mistake), but render the error block "likec4.config.js/ts is not supported, use likec4.config.json". `bundle-require` and `esbuild` are replaced with stubs in the bundle.
 - Without `project`: walk up from the Markdown file's folder to the nearest project root (as mkdocs-likec4 `_find_nearest_project`: the ancestor project root with the longest path). If none is found and the containing workspace root has no config files and contains `.c4`/`.likec4` files at its root, use that root's default project (named `default`); otherwise render "No LikeC4 project found".
+- Still nothing found and the containing workspace root has exactly one project: use it (an MkDocs build from the docs root uses the only project for every page). With several, render "not inside a LikeC4 project; specify one with project=<name> (known: …)", matching the MkDocs build error "Specify exact project".
 - With `project`: match by name among all discovered projects; if there is none, render an error block.
 - Markdown outside the workspace: walk up from its folder looking for config files (file system lookups only, no scan).
 
@@ -64,7 +67,7 @@ Each document gets one model per referenced project (stable id), and each block 
 
 ```html
 <div class="likec4-model" id="likec4-model-<project>-<rootTag>" hidden><script type="application/json">{"hash":"…","trimmed":false,"model":{…LikeC4Model.Layouted $data…}}</script></div>
-<div class="likec4-view" id="likec4-<project>-<rootTag>-<viewId>-<n>" data-likec4-opts='{"project":"…","viewId":"…","model":"likec4-model-…","browser":true,"variant":"diagram","scheme":"auto","maxHeight":600}'>
+<div class="likec4-view" id="likec4-<project>-<rootTag>-<viewId>-<n>" data-likec4-opts='{"project":"…","viewId":"…","model":"likec4-model-…","browser":true,"variant":"diagram","scheme":"auto","maxHeight":600,"panZoom":false}'>
   <script type="application/json">{"hash":"…","state":"ok|loading|error|stale","message":"…","trimmed":false}</script>
   <svg class="likec4-static" viewBox="…" data-bounds="x y w h" …>…static snapshot…</svg>
 </div>
@@ -89,8 +92,8 @@ Each document gets one model per referenced project (stable id), and each block 
 - States: `loading` shows a placeholder; `error` shows an error block (no diagram); `stale` renders the last good model with a notice on top.
 - Theme: `color-scheme=auto` reads the `vscode-light`/`vscode-dark`/`vscode-high-contrast` classes on `document.body` and watches them with a `MutationObserver`; `light`/`dark` are fixed.
 - Size: the diagram frame is `min(100%, view width + 32px)` wide, keeps the aspect ratio of the layout bounds (`pickViewBounds(view, variant)`), has `max-height` = `maxHeight` and `min-height` = 160px, and is centered. The snapshot uses the same formula (inline style from the server); `LikeC4View` has its own `keepAspectRatio` turned off and fills the frame.
-- Interaction: the mouse wheel scrolls the Markdown page (not captured by diagrams, matching how mkdocs-likec4 pages behave); Ctrl/⌘ + wheel or pinch zooms; drag pans; with `browser=true`, clicking an element opens the in-diagram browser overlay. Implemented as `reactFlowProps={zoomOnScroll:false, panOnScroll:false, preventScrolling:false}`.
-- Viewport: stored in `sessionStorage` keyed by "document URI + host id". Interaction events are listened to in the capture phase on the host (React Flow stops propagation), writes are throttled, and the frame size is recorded. Only keys of the current document are kept. The diagram always initializes with `fitView=true` (with `fitView=false`, LikeC4 pan and zoom do not work). If the saved viewport still shows the view, it is restored in `onInitialized` through `diagram.send({type:'xyflow.setViewport'})`, followed by `xyflow.viewportMoved(manually)` so later container size changes do not fit again. On the morphdom path components are not remounted, so the viewport is kept naturally.
+- Interaction (default, same as the mkdocs-likec4 web component, which renders `LikeC4View` with its defaults): the embedded diagram is static (`pannable=false`, `zoomable=false`) and fitted; the mouse wheel scrolls the Markdown page; with `browser=true`, clicking the canvas, a node or an edge opens the view browser overlay (pan, zoom, element details, navigation); `browser=false` views do not react to clicks. With the `panZoom` setting, embedded diagrams are also pannable (drag) and zoomable (Ctrl/⌘ + wheel or pinch); the wheel still scrolls the page (`reactFlowProps={zoomOnScroll:false, panOnScroll:false, preventScrolling:false}`).
+- Viewport (only with `panZoom`; static views always show the initial fit, and their snapshots use the fit as well): stored in `sessionStorage` keyed by "document URI + host id". Interaction events are listened to in the capture phase on the host (React Flow stops propagation), writes are throttled, and the frame size is recorded. Only keys of the current document are kept. The diagram always initializes with `fitView=true` (with `fitView=false`, LikeC4 pan and zoom do not work). If the saved viewport still shows the view, it is restored in `onInitialized` through `diagram.send({type:'xyflow.setViewport'})`, followed by `xyflow.viewportMoved(manually)` so later container size changes do not fit again. On the morphdom path components are not remounted, so the viewport is kept naturally.
 - Bundle: IIFE; `define` for `process.env.NODE_ENV`, `import.meta.env.DEV`, `import.meta.env.MODE`. No `eval`, no inserted `<script>`, no network requests.
 - Test aid: with `sessionStorage['likec4-trace']='1'`, the entry records, frame by frame for about 4 seconds after loading, what each visible host shows (snapshot, diagram, blank) and its viewport. Recording starts at `DOMContentLoaded`; frames before that (webview already swapped but content not yet appended) cannot be observed from inside the page.
 
@@ -120,6 +123,8 @@ Output Channel "LikeC4 Markdown Preview" records: `[projects]` project discovery
 | `likec4MarkdownPreview.maxHeight` | number | `600` | Maximum view height (px) |
 | `likec4MarkdownPreview.graphviz` | `wasm`/`binary` | `wasm` | Layout engine |
 | `likec4MarkdownPreview.maxModelBytes` | number | `2097152` | Maximum inlined model size per project; beyond it the model is trimmed and browser is disabled |
+| `likec4MarkdownPreview.colorScheme` | `auto`/`light`/`dark` | `auto` | Default for blocks without a valid `color-scheme` (mkdocs-likec4 `color_scheme`) |
+| `likec4MarkdownPreview.panZoom` | boolean | `false` | Zoom and pan inside embedded views |
 
 ## 5. Scope and compatibility
 
@@ -148,3 +153,12 @@ Output Channel "LikeC4 Markdown Preview" records: `[projects]` project discovery
 | Deferred mounting of off-screen hosts | Accepted; mounted hosts are not recycled |
 | Full-model recomputation for large models | Accepted (incremental recomputation P95 287 ms < 500 ms); re-measure with a real large model |
 | E3 latency | Non-blocking; replacement thresholds in §6; listed as a known limitation |
+
+## 8. Changes after acceptance
+
+| Change | Reason |
+|---|---|
+| Embedded views are static by default; zoom and pan are opt-in (`panZoom`) | Same behavior as mkdocs-likec4, whose web component uses `LikeC4View` defaults. The viewport persistence of §3.3 applies only with `panZoom` |
+| Fence parsing ported from mkdocs-likec4 (single-line body, backtick fences, same option patterns) | A block renders here exactly when it renders in MkDocs |
+| `colorScheme` setting | Counterpart of mkdocs-likec4's `color_scheme` plugin option |
+| Single project of the workspace root used for documents outside every project | Same result as an MkDocs build from the docs root |

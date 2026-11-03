@@ -33,6 +33,8 @@ function makeDeps(over: Partial<RenderDeps> & { snaps?: Record<string, ProjectSn
     enabled: () => true,
     maxModelBytes: () => 1024 * 1024,
     maxHeight: () => 500,
+    colorScheme: () => 'auto',
+    panZoom: () => false,
     resolve: (dir, explicit) => resolveProject(dir, explicit, [shop, billing]),
     snapshot: p => {
       requested.push(p.name)
@@ -118,6 +120,29 @@ describe('likec4 fence rendering', () => {
     const err = parse(render('```likec4-view\nindex\n```', makeDeps({ snaps: { shop: { hash: 'e', state: 'error', message: 'parse failed', viewIds: new Set() } } }).deps))
     expect(err.hosts[0]!.data).toMatchObject({ state: 'error', message: 'parse failed' })
     expect(err.models).toHaveLength(0)
+  })
+
+  it('requires a single-line body, as mkdocs-likec4 does', () => {
+    const { deps, requested } = makeDeps()
+    const { hosts } = parse(render('```likec4-view\nindex\nextra\n```', deps))
+    expect(hosts[0]!.data).toMatchObject({ state: 'error' })
+    expect(hosts[0]!.data.message).toMatch(/exactly one line/)
+    expect(requested).toEqual([])
+  })
+
+  it('leaves tilde fences to the original rule, as mkdocs-likec4 does', () => {
+    const html = render('~~~likec4-view\nindex\n~~~', makeDeps().deps)
+    expect(html).not.toContain('class="likec4-view"')
+    expect(html).toContain('<code class="language-likec4-view">')
+  })
+
+  it('applies the default color scheme and the panZoom setting', () => {
+    const { deps } = makeDeps({ colorScheme: () => 'dark', panZoom: () => true })
+    const { hosts } = parse(render('```likec4-view\nindex\n```\n```likec4-view color-scheme=light\nindex\n```', deps))
+    expect(hosts.map(h => h.opts?.scheme)).toEqual(['dark', 'light'])
+    expect(hosts.every(h => h.opts?.panZoom === true)).toBe(true)
+    const off = parse(render('```likec4-view\nindex\n```', makeDeps().deps)).hosts[0]!.opts
+    expect(off).toMatchObject({ scheme: 'auto', panZoom: false })
   })
 
   it('no project for documents outside any project', () => {
