@@ -119,7 +119,7 @@ From opening the preview to all 4 views shown: 6844 ms, all cold (VS Code just s
 4. There is no `ci-metrics` model, so the "real large model" data for E9 and 7.3 come from the generated `fixtures/large`. The full-model recomputation time should be re-measured with a real large model (ADVISOR request).
 5. `likec4.config.js/ts` is not supported.
 6. Go to source is not implemented.
-7. Publishing fields: `publisher` is provisionally `windead` and there is no icon (the official LikeC4 logo is not used). To be decided by the user before publishing to a marketplace.
+7. Publishing fields: `publisher` is `windead` and there is no icon (the official LikeC4 logo is not used). The marketplace listing is still up to the user.
 8. With fast back-to-back edits while the previous preview reload is still initializing, CPU contention pushes the extension-controlled segment over the 200 ms threshold: in two back-to-back runs, the extension segment P95 was 278 ms (10 edits) and 252 ms (20 edits), mainly from the LikeC4 recomputation tail (233/260 ms); the extension's own overhead stayed at 15 ms or less (see §3).
 9. Each document inlines the full layouted model, which grows the preview HTML for many documents with large models; above 2 MiB the model is trimmed automatically.
 
