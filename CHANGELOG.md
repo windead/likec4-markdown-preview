@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Upgrade the bundled LikeC4 packages to 1.61.0 (including the new text metrics and element details UI).
+- Publish releases to VS Code Marketplace and Open VSX with OIDC trusted publishing; no long-lived publishing tokens are stored.
+
 ## 0.1.0
 
 First release.

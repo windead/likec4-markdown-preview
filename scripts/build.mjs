@@ -17,7 +17,7 @@ const extension = {
   external: ['vscode'],
   mainFields: ['module', 'main'],
   conditions: ['node', 'import'],
-  alias: { 'bundle-require': stub('bundle-require'), esbuild: stub('esbuild') },
+  alias: { jiti: stub('jiti') },
   define: { 'import.meta.url': '__importMetaUrl' },
   banner: { js: 'const __importMetaUrl = require("url").pathToFileURL(__filename).href;' },
   minify,

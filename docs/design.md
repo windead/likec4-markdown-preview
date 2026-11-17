@@ -28,7 +28,7 @@ Renders ` ```likec4-view ` blocks in the built-in VS Code Markdown preview, with
 ## 2. Project resolution
 
 - Scan all workspace roots for `likec4.config.json`, `.likec4rc` and `likec4.config.{js,mjs,ts,mts}` (excluding `node_modules`). For JSON configs, `name` is the project name and the containing folder is the project root. Rescan when config files are added, removed or changed.
-- **JS/TS configs are not executed.** They still take part in the nearest-project lookup (so a parent project is not picked by mistake), but render the error block "likec4.config.js/ts is not supported, use likec4.config.json". `bundle-require` and `esbuild` are replaced with stubs in the bundle.
+- **JS/TS configs are not executed.** They still take part in the nearest-project lookup (so a parent project is not picked by mistake), but render the error block "likec4.config.js/ts is not supported, use likec4.config.json". `jiti` is replaced with a stub in the bundle.
 - Without `project`: walk up from the Markdown file's folder to the nearest project root (as mkdocs-likec4 `_find_nearest_project`: the ancestor project root with the longest path). If none is found and the containing workspace root has no config files and contains `.c4`/`.likec4` files at its root, use that root's default project (named `default`); otherwise render "No LikeC4 project found".
 - Still nothing found and the containing workspace root has exactly one project: use it (an MkDocs build from the docs root uses the only project for every page). With several, render "not inside a LikeC4 project; specify one with project=<name> (known: …)", matching the MkDocs build error "Specify exact project".
 - With `project`: match by name among all discovered projects; if there is none, render an error block.
@@ -131,7 +131,7 @@ Output Channel "LikeC4 Markdown Preview" records: `[projects]` project discovery
 - Read-only. No LSP client, no diagnostics and no completion, so it does not interfere with the official LikeC4 extension.
 - The manifest declares `capabilities.untrustedWorkspaces: { supported: true }` (no workspace code is executed).
 - Not included: go to source (`command:` URIs are not allowed in the preview; a `vscode://` URI approach may be evaluated later), notebooks, third-party previews, HTML/PDF export.
-- `engines.vscode`: `^1.123.0`. This is the later of 1.63 (morphdom preview) and the earliest version whose desktop extension host Node satisfies the `engines.node` of every bundled dependency (`@likec4/language-server@1.60.0` requires ≥22.22.3): 1.122 ships Electron 39.8.8 / Node 22.22.1 (not enough), 1.123 ships Electron 42.3.0 / Node 24.15.0. Integration tests were run on VS Code 1.123.0 and 1.144.0.
+- `engines.vscode`: `^1.123.0`. This is the later of 1.63 (morphdom preview) and the earliest version whose desktop extension host Node satisfies the `engines.node` of every bundled dependency (`@likec4/language-server@1.61.0` requires ≥22.23.3): 1.122 ships Electron 39.8.8 / Node 22.22.1 (not enough), 1.123 ships Electron 42.3.0 / Node 24.15.0. Integration tests were run on VS Code 1.123.0 and 1.144.0.
 
 ## 6. Acceptance adjustments (relative to section 7.2 of the brief)
 
@@ -148,7 +148,7 @@ Output Channel "LikeC4 Markdown Preview" records: `[projects]` project discovery
 | `protected langium` | Not used; services assembled from public APIs |
 | Go to source | Not in the first version |
 | `engines.vscode` | Floor set by the Node version the dependencies declare, measured in the extension host |
-| JS/TS configs | Not executed; `bundle-require`/`esbuild` stubbed; error block |
+| JS/TS configs | Not executed; `jiti` stubbed; error block |
 | Static snapshot + lazy entry | Accepted (removes blank frames during forced reloads); no snapshot for the sequence variant |
 | Deferred mounting of off-screen hosts | Accepted; mounted hosts are not recycled |
 | Full-model recomputation for large models | Accepted (incremental recomputation P95 287 ms < 500 ms); re-measure with a real large model |

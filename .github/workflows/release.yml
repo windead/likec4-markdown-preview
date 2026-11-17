@@ -1,7 +1,8 @@
 name: Release
 
 # Push a tag such as v0.1.0 (matching "version" in package.json) to build, test and package
-# the extension and publish the VSIX as a GitHub Release asset.
+# the extension, publish it to VS Code Marketplace and Open VSX (OIDC trusted publishing),
+# and attach the VSIX to a GitHub Release.
 on:
   push:
     tags: ['v*']
@@ -15,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -43,6 +45,10 @@ jobs:
             echo "::error::CHANGELOG.md has no section for ${{ steps.version.outputs.version }}"
             exit 1
           fi
+      - name: Publish to VS Code Marketplace
+        run: npx vsce publish --oidc --packagePath "likec4-markdown-preview-${{ steps.version.outputs.version }}.vsix" --skip-duplicate --no-dependencies
+      - name: Publish to Open VSX
+        run: npx ovsx publish --trusted-publishing --packagePath "likec4-markdown-preview-${{ steps.version.outputs.version }}.vsix" --skip-duplicate --no-dependencies
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

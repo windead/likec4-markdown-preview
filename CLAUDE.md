@@ -67,7 +67,7 @@ The two sides communicate one way through **JSON inlined in the HTML**; the prev
 - Do not copy LikeC4 source code; if copying is unavoidable, keep its MIT header and list it in `THIRD_PARTY_NOTICES` (test code that reuses VS Code's `areNodesEqual` logic likewise names its source and MIT notice).
 - Do not depend on internal APIs of the official LikeC4 extension; no LSP client, no diagnostics/completion, to avoid conflicts with it. Name and icon must not suggest an official project; no LikeC4 logo.
 - Preview script: no `eval`, no dynamically inserted `<script>`, no network requests.
-- Pin dependencies to exact versions; `likec4` / `@likec4/*` at the same version (baseline `likec4@1.60.0`).
+- Pin dependencies to exact versions; `likec4` / `@likec4/*` at the same version (baseline `likec4@1.61.0`).
 - Log to a dedicated Output Channel (recomputation times and refresh reasons); never log file contents.
 - Out of scope: editing, notebook cells, third-party preview extensions, HTML/PDF export.
 
@@ -76,4 +76,4 @@ The two sides communicate one way through **JSON inlined in the HTML**; the prev
 - All repository content (code, comments, tests, docs, commit messages) is in English.
 - Commit messages describe only the change itself and **never name an LLM or agent** (no Co-Authored-By or "generated with" lines; this overrides the default attribution rule).
 - GitHub remote: `git@github.com:windead/likec4-markdown-preview.git` (branch `main`). Push, tag or publish only when the user asks.
-- Releases: pushing a `v*` tag runs `.github/workflows/release.yml`, which builds, tests, packages the VSIX and attaches it to a GitHub Release.
+- Releases: pushing a `v*` tag runs `.github/workflows/release.yml`, which builds, tests, packages the VSIX, publishes it to VS Code Marketplace and Open VSX via OIDC trusted publishing, and attaches it to a GitHub Release.
