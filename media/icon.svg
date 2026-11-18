@@ -1,0 +1,36 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- App icon rounded background -->
+  <rect width="256" height="256" rx="40" fill="#1B2026" />
+
+  <!-- Outer Markdown-inspired badge frame -->
+  <rect x="28" y="62" width="200" height="132" rx="18" stroke="#EAE6D8" stroke-width="14" />
+
+  <!-- Left: Markdown "M" + downward arrow -->
+  <path
+    d="M49 138V82H61L82 108L103 82H115V138H103V101L82 127L61 101V138H49Z"
+    fill="#EAE6D8"
+  />
+  <path
+    d="M76 134H88V154H101L82 174L63 154H76V134Z"
+    fill="#EAE6D8"
+  />
+
+  <!-- Right: 3-level C4 hierarchy tree (1 -> 2 -> 2) -->
+  <path
+    d="M170 104V112M148 112H191.5M148 112V120M191.5 112V120M191.5 140V148M181 148H202M181 148V155M202 148V155"
+    stroke="#5E98AF"
+    stroke-width="4.5"
+    stroke-linecap="square"
+  />
+
+  <!-- Root node -->
+  <rect x="131" y="82" width="79" height="22" rx="4.5" fill="#73ACC2" />
+
+  <!-- Level 2 nodes -->
+  <rect x="131" y="120" width="34" height="20" rx="4.5" fill="#5E98AF" />
+  <rect x="173" y="120" width="37" height="20" rx="4.5" fill="#5E98AF" />
+
+  <!-- Level 3 leaf nodes -->
+  <rect x="173" y="155" width="16" height="19" rx="4" fill="#5E98AF" />
+  <rect x="194" y="155" width="16" height="19" rx="4" fill="#5E98AF" />
+</svg>

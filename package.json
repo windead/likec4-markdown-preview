@@ -4,6 +4,7 @@
   "description": "Render LikeC4 views in the built-in VS Code Markdown preview, with mkdocs-likec4 compatible syntax. Not an official LikeC4 project.",
   "version": "0.1.1",
   "publisher": "windead",
+  "icon": "media/icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
