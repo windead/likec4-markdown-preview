@@ -1,5 +1,8 @@
 # Markdown Preview for LikeC4
 
+[![VS Code Marketplace Version](https://vsmarketplacebadges.dev/version-short/windead.likec4-markdown-preview.svg?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=windead.likec4-markdown-preview)
+[![Open VSX Version](https://img.shields.io/open-vsx/v/windead/likec4-markdown-preview?label=Open%20VSX)](https://open-vsx.org/extension/windead/likec4-markdown-preview)
+
 Renders [LikeC4](https://likec4.dev) views in the built-in VS Code Markdown preview.
 
 > **Not an official LikeC4 project.** This extension is developed independently and is not affiliated with or endorsed by the LikeC4 team. It uses the published `@likec4/*` packages.
