@@ -48,6 +48,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
       } catch {}
     }
   }
+  log(`[init] likec4-markdown-preview v${process.env.EXTENSION_VERSION ?? 'dev'} (bundled LikeC4 ${process.env.LIKEC4_VERSION ?? 'unknown'})`)
   let cfg = config()
 
   const registry = new ProjectRegistry(log)

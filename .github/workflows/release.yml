@@ -27,12 +27,15 @@ jobs:
       - name: Check that the tag matches the package version
         id: version
         run: |
+          npm run check-version
           version=$(node -p "require('./package.json').version")
+          likec4_version=$(node -p "require('./package.json').dependencies['@likec4/core']")
           if [ "v$version" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "likec4_version=$likec4_version" >> "$GITHUB_OUTPUT"
       - name: Package
         run: npm run package
       - name: Release notes from CHANGELOG.md
@@ -56,6 +59,6 @@ jobs:
           vsix="likec4-markdown-preview-${{ steps.version.outputs.version }}.vsix"
           sha256sum "$vsix" > "$vsix.sha256"
           gh release create "$GITHUB_REF_NAME" "$vsix" "$vsix.sha256" \
-            --title "$GITHUB_REF_NAME" \
+            --title "v${{ steps.version.outputs.version }} (LikeC4 ${{ steps.version.outputs.likec4_version }})" \
             --notes-file release-notes.md \
             --verify-tag

@@ -19,6 +19,22 @@ The syntax and behavior follow [mkdocs-likec4](https://github.com/doubleSlashde/
 
 Download `likec4-markdown-preview-<version>.vsix` from the [GitHub Releases](https://github.com/windead/likec4-markdown-preview/releases) page, then in VS Code run **Extensions: Install from VSIX...** (or `code --install-extension likec4-markdown-preview-<version>.vsix`).
 
+## Versioning & Compatibility
+
+Because VS Code Marketplace and Open VSX require strict numeric `MAJOR.MINOR.PATCH` versions, this extension encodes the bundled LikeC4 version directly into its version number:
+
+```text
+<LikeC4_MAJOR>.<LikeC4_MINOR>.<LikeC4_PATCH * 100 + EXT_REV>
+```
+
+For example, `1.61.100` bundles LikeC4 `1.61.1` (extension revision `0`), and `1.61.101` would be a bugfix release of the extension still bundling LikeC4 `1.61.1`. You can use **Install Specific Version...** in VS Code to pin the LikeC4 version that matches your project.
+
+| Extension Version | Bundled LikeC4 | Notes |
+|---|---|---|
+| `1.61.100` | `1.61.1` | First version using the encoded versioning scheme |
+| `0.1.1` | `1.61.0` | Legacy versioning |
+| `0.1.0` | `1.60.x` | Initial release |
+
 ## Features
 
 - Renders element, dynamic and deployment views with the same components and styles as LikeC4 itself.

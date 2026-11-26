@@ -1,7 +1,9 @@
 // Builds dist/extension.js (Node, CJS) and dist/preview.js (browser, IIFE).
 import * as esbuild from 'esbuild'
 import { fileURLToPath } from 'node:url'
+import { verifyVersion } from './check-version.mjs'
 
+const versionInfo = verifyVersion()
 const watch = process.argv.includes('--watch')
 const minify = !process.argv.includes('--dev')
 const stub = name => fileURLToPath(new URL(`../src/stubs/${name}.ts`, import.meta.url))
@@ -18,7 +20,11 @@ const extension = {
   mainFields: ['module', 'main'],
   conditions: ['node', 'import'],
   alias: { jiti: stub('jiti') },
-  define: { 'import.meta.url': '__importMetaUrl' },
+  define: {
+    'import.meta.url': '__importMetaUrl',
+    'process.env.EXTENSION_VERSION': JSON.stringify(versionInfo.extVersion),
+    'process.env.LIKEC4_VERSION': JSON.stringify(versionInfo.likec4Version),
+  },
   banner: { js: 'const __importMetaUrl = require("url").pathToFileURL(__filename).href;' },
   minify,
   sourcemap: !minify,

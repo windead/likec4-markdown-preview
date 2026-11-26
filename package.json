@@ -1,8 +1,8 @@
 {
   "name": "likec4-markdown-preview",
   "displayName": "Markdown Preview for LikeC4",
-  "description": "Render LikeC4 views in the built-in VS Code Markdown preview, with mkdocs-likec4 compatible syntax. Not an official LikeC4 project.",
-  "version": "0.1.1",
+  "description": "Render LikeC4 views in the built-in VS Code Markdown preview, with mkdocs-likec4 compatible syntax (bundled LikeC4 1.61.1). Not an official LikeC4 project.",
+  "version": "1.61.100",
   "publisher": "windead",
   "icon": "media/icon.png",
   "license": "MIT",
@@ -89,7 +89,11 @@
         },
         "likec4MarkdownPreview.colorScheme": {
           "type": "string",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "default": "auto",
           "enumDescriptions": [
             "Follow the VS Code color theme.",
@@ -116,14 +120,15 @@
     "test:integration": "node scripts/build.mjs && node test/integration/run.mjs",
     "test:e2e": "node scripts/build.mjs && node test/e2e/run.mjs",
     "notices": "node scripts/notices.mjs",
+    "check-version": "node scripts/check-version.mjs",
     "package": "node scripts/build.mjs && node scripts/notices.mjs && vsce package --no-dependencies"
   },
   "dependencies": {
-    "@likec4/core": "1.61.0",
-    "@likec4/diagram": "1.61.0",
-    "@likec4/language-server": "1.61.0",
-    "@likec4/language-services": "1.61.0",
-    "@likec4/layouts": "1.61.0",
+    "@likec4/core": "1.61.1",
+    "@likec4/diagram": "1.61.1",
+    "@likec4/language-server": "1.61.1",
+    "@likec4/language-services": "1.61.1",
+    "@likec4/layouts": "1.61.1",
     "langium": "4.4.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

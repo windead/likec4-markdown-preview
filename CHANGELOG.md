@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.61.100
+
+- Upgrade the bundled LikeC4 packages to `1.61.1`.
+- Adopt the encoded versioning scheme (`<LikeC4_MAJOR>.<LikeC4_MINOR>.<LikeC4_PATCH * 100 + EXT_REV>`) so users can directly identify and select the bundled LikeC4 version.
+- Log the extension version and bundled LikeC4 version in the **LikeC4 Markdown Preview** output channel on activation, and enforce version consistency during build/packaging.
+
 ## 0.1.1
 
 - Upgrade the bundled LikeC4 packages to 1.61.0 (including the new text metrics and element details UI).
